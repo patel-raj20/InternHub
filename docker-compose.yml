@@ -6,27 +6,26 @@ services:
     container_name: internhub_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: internhub
+      POSTGRES_USER: process.env.POSTGRES_USER
+      POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD
+      POSTGRES_DB: process.env.POSTGRES_DB
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - ./db:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
-
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: internhub_pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@internhub.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: PGADMIN_DEFAULT_EMAIL
+      PGADMIN_DEFAULT_PASSWORD: PGADMIN_DEFAULT_PASSWORD
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT}:80"
 
-# hasura graphql engine
+  # hasura graphql engine
   hasura:
     image: hasura/graphql-engine:v2.36.0
     container_name: internhub_hasura
@@ -34,12 +33,12 @@ services:
     depends_on:
       - db
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgres@db:5432/internhub
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-      HASURA_GRAPHQL_DEV_MODE: "true"
-      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_DATABASE_URL: process.env.HASURA_GRAPHQL_DATABASE_URL
+      HASURA_GRAPHQL_ENABLE_CONSOLE: process.env.HASURA_GRAPHQL_ENABLE_CONSOLE
+      HASURA_GRAPHQL_DEV_MODE: process.env.HASURA_GRAPHQL_DEV_MODE
+      HASURA_GRAPHQL_ADMIN_SECRET: process.env.HASURA_GRAPHQL_ADMIN_SECRET
     ports:
-      - "8080:8080"
+      - "${HASURA_GRAPHQL_PORT}:8080"
 
 volumes:
   postgres_data:
