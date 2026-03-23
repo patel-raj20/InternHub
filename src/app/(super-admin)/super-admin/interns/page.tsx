@@ -1,0 +1,29 @@
+import { getInterns } from "@/lib/api/interns";
+import { getDepartments } from "@/lib/api/departments";
+import { InternsList } from "@/components/interns/interns-list";
+import { Button } from "@/components/ui/button";
+import { UserPlus } from "lucide-react";
+import Link from "next/link";
+
+export default async function SuperAdminInternsPage() {
+  const interns = await getInterns();
+  const departments = await getDepartments();
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">System Interns</h1>
+          <p className="text-muted-foreground mt-1">Manage all interns across all departments.</p>
+        </div>
+        <Link href="/super-admin/create-intern">
+          <Button className="gap-2">
+            <UserPlus className="w-4 h-4" /> Add Intern
+          </Button>
+        </Link>
+      </div>
+
+      <InternsList initialData={interns} mode="SUPER_ADMIN" departments={departments} />
+    </div>
+  );
+}
