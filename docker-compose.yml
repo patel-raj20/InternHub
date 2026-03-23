@@ -26,5 +26,20 @@ services:
     ports:
       - "5050:80"
 
+# hasura graphql engine
+  hasura:
+    image: hasura/graphql-engine:v2.36.0
+    container_name: internhub_hasura
+    restart: always
+    depends_on:
+      - db
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgres@db:5432/internhub
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:
