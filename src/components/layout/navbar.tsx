@@ -47,28 +47,7 @@ export function Navbar() {
           </div>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <div className="hidden xl:flex bg-muted/30 p-1 rounded-xl gap-1 border border-border/50">
-            {(["INTERN", "DEPT_ADMIN", "SUPER_ADMIN"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => {
-                  dispatch(setRole(r));
-                  document.cookie = `session=${JSON.stringify({ role: r })}; path=/`;
-                  if (r === "SUPER_ADMIN") window.location.href = "/super-admin/dashboard";
-                  else if (r === "DEPT_ADMIN") window.location.href = "/admin/dashboard";
-                  else window.location.href = "/profile";
-                }}
-                className={cn(
-                  "px-3 py-1.5 text-[10px] uppercase font-black tracking-widest rounded-lg transition-all",
-                  role === r 
-                    ? "bg-primary text-primary-foreground shadow-lg neon-glow scale-105" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                {r.replace("_", " ")}
-              </button>
-            ))}
-          </div>
+          {/* Role toggle removed for RBAC security */}
 
           <button className="relative p-2.5 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all rounded-xl group">
             <Bell size={20} className="group-hover:scale-110 transition-transform" />

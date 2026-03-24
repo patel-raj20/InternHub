@@ -27,7 +27,6 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm({
     defaultValues: initialData || {
       status: "ACTIVE",
-      no_of_backlogs: 0,
     },
   });
 
@@ -35,7 +34,8 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Account & Basic Information</CardTitle>
+          <CardTitle>Account Credentials</CardTitle>
+          <p className="text-xs text-muted-foreground">These details will be used for system authentication.</p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
@@ -57,16 +57,40 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
           )}
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Phone Number</label>
-            <Input {...register("phone")} placeholder="Enter phone (optional)" />
+            <Input {...register("phone")} placeholder="Enter phone" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Bio</label>
+            <Input {...register("bio")} placeholder="Short introduction" />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Personal Details</CardTitle>
+          <CardTitle>Academic Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">College Name</label>
+            <Input {...register("college_name")} placeholder="e.g. VIT University" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Degree</label>
+            <Input {...register("degree")} placeholder="e.g. B.Tech" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Specialization</label>
+            <Input {...register("specialization")} placeholder="e.g. CSE" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Graduation Year</label>
+            <Input {...register("graduation_year", { valueAsNumber: true })} type="number" placeholder="2024" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">CGPA</label>
+            <Input {...register("cgpa", { valueAsNumber: true })} type="number" step="0.01" placeholder="9.0" />
+          </div>
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">DOB</label>
             <Input {...register("dob")} type="date" />
@@ -75,18 +99,68 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Blood Group</label>
             <Input {...register("blood_group")} placeholder="e.g. A+" />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Skills & Certifications</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">No of Backlogs</label>
-            <Input {...register("no_of_backlogs", { valueAsNumber: true })} type="number" min="0" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Skills (Comma separated)</label>
+            <Input {...register("skills")} placeholder="e.g. React, Next.js, Node.js" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Certifications (Comma separated)</label>
+            <Input {...register("certifications")} placeholder="e.g. AWS Certified, Google Cloud" />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Academic & Professional Info</CardTitle>
+          <CardTitle>Professional Links</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">GitHub URL</label>
+            <Input {...register("github_url")} placeholder="https://github.com/..." />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">LinkedIn URL</label>
+            <Input {...register("linkedin_url")} placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Portfolio URL</label>
+            <Input {...register("portfolio_url")} placeholder="https://..." />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Location & Duration</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Address</label>
+            <Input {...register("address")} placeholder="Enter full address" />
+          </div>
+          <div className="space-y-3 grid grid-cols-3 gap-2">
+            <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">City</label>
+               <Input {...register("city")} placeholder="City" />
+            </div>
+            <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">State</label>
+               <Input {...register("state")} placeholder="State" />
+            </div>
+            <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Country</label>
+               <Input {...register("country")} placeholder="Country" />
+            </div>
+          </div>
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Department</label>
             <Controller
@@ -100,7 +174,7 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
-                      <SelectItem key={dept.depart_id} value={dept.depart_id}>{dept.name}</SelectItem>
+                      <SelectItem key={dept.id || dept.depart_id } value={dept.id || dept.depart_id}>{dept.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -113,9 +187,15 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
             <Input {...register("enrollment_number", { required: "Enrollment number is required" })} placeholder="Enter enrollment number" />
             {errors.enrollment_number && <p className="text-[10px] text-red-500 font-bold">{errors.enrollment_number.message as string}</p>}
           </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Joining Date</label>
-            <Input {...register("joining_date", { required: "Joining date is required" })} type="date" />
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-3">
+               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Joining Date</label>
+               <Input {...register("joining_date", { required: "Joining date is required" })} type="date" />
+             </div>
+             <div className="space-y-3">
+               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">End Date</label>
+               <Input {...register("end_date")} type="date" />
+             </div>
           </div>
         </CardContent>
       </Card>

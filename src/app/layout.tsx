@@ -31,12 +31,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MeshBackground />
-          <AppProviders>
-            <ContentLayout>
-              {children}
-            </ContentLayout>
-          </AppProviders>
+            <MeshBackground />
+            <AppProviders>
+              <ContentLayout>
+                {children}
+              </ContentLayout>
+            </AppProviders>
         </ThemeProvider>
       </body>
     </html>

@@ -1,28 +1,41 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import Loader from "@/components/Loader/page";
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { RootState } from "@/store";
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { role } = useSelector((state: RootState) => state.user);
+export default function Dashboard() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
 
-  useEffect(() => {
-    if (role === "SUPER_ADMIN") router.push("/super-admin/dashboard");
-    else if (role === "DEPT_ADMIN") router.push("/admin/dashboard");
-    else router.push("/profile");
-  }, [role, router]);
+    useEffect(() => {
+        if (status === "authenticated" && session?.user?.role) {
+            // Redirect based on role
+            switch (session.user.role) {
+                case "SUPER_ADMIN":
+                    router.push("/super-admin/dashboard");
+                    break;
+                case "DEPT_ADMIN":
+                    router.push("/admin/dashboard");
+                    break;
+                case "INTERN":
+                    router.push("/profile");
+                    break;
+                default:
+                    break;
+            }
+        }
+    }, [session, status, router]);
 
-  return (
-    <div className="flex h-screen items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent neon-glow" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-          Routing to Workspace...
-        </p>
-      </div>
-    </div>
-  );
+    // Show loader while redirecting or loading session
+    if (status === "loading" || status === "authenticated") return <Loader />;
+
+    if (!session) return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <p className="text-muted-foreground">Unauthorized. Redirecting to login...</p>
+        </div>
+    );
+
+    return <Loader />;
 }

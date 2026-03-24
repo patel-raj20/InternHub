@@ -10,7 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 interface InternsListProps {
   initialData: Intern[];
   mode: "ADMIN" | "SUPER_ADMIN";
-  departments?: { depart_id: string; name: string }[];
+  departments?: { id: string; name: string }[];
 }
 
 export function InternsList({ initialData, mode, departments }: InternsListProps) {

@@ -10,8 +10,10 @@ import {
   ShieldCheck, 
   Settings, 
   LogOut,
+  Building2,
   LucideIcon
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
@@ -25,7 +27,7 @@ interface MenuItem {
   href: string;
 }
 
-const menuConfigs: Record<Exclude<UserRole, null>, MenuItem[]> = {
+const menuConfigs: Record<UserRole, MenuItem[]> = {
   INTERN: [
     { label: "My Profile", href: "/profile", icon: LayoutDashboard },
   ],
@@ -37,8 +39,9 @@ const menuConfigs: Record<Exclude<UserRole, null>, MenuItem[]> = {
   SUPER_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/super-admin/dashboard" },
     { icon: Users, label: "All Interns", href: "/super-admin/interns" },
+    { icon: Building2, label: "Organizations", href: "/super-admin/organizations" },
     { icon: UserPlus, label: "Add Intern", href: "/super-admin/create-intern" },
-    { icon: ShieldCheck, label: "Departments", href: "/super-admin/departments" },
+    { icon: Settings, label: "Settings", href: "/super-admin/settings" },
   ],
 };
 
@@ -77,30 +80,7 @@ export function Sidebar() {
           </span>
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto momentum-scroll">
-          <div className="flex xl:hidden bg-muted/30 p-1 rounded-xl gap-1 border border-border/50 mb-6 flex-wrap">
-            {(["INTERN", "DEPT_ADMIN", "SUPER_ADMIN"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => {
-                  dispatch(setRole(r));
-                  // Sync cookie for middleware/proxy
-                  document.cookie = `session=${JSON.stringify({ role: r })}; path=/`;
-                  // Update current URL to match new role to avoid proxy confusion
-                  if (r === "SUPER_ADMIN") window.location.href = "/super-admin/dashboard";
-                  else if (r === "DEPT_ADMIN") window.location.href = "/admin/dashboard";
-                  else window.location.href = "/profile";
-                }}
-                className={cn(
-                  "px-2 py-1 text-[10px] uppercase font-bold rounded-lg transition-all flex-1",
-                  role === r
-                    ? "bg-primary text-primary-foreground shadow-lg neon-glow"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {r.replace("_", " ")}
-              </button>
-            ))}
-          </div>
+          {/* Mobile role toggle removed for RBAC security */}
           
           {menuItems.map((item: MenuItem) => {
             const Icon = item.icon;
@@ -139,9 +119,7 @@ export function Sidebar() {
           </button>
           <button 
             onClick={() => {
-              dispatch(setRole(null));
-              document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-              window.location.href = "/login";
+              signOut({ callbackUrl: "/login" });
             }}
             className="flex w-full items-center rounded-xl px-4 py-2.5 text-sm font-bold text-red-500/80 transition-all hover:bg-red-500/10 hover:text-red-500"
           >

@@ -97,7 +97,7 @@ export default function SuperAdminDashboardPage() {
             <CardContent className="space-y-3 mt-4">
               {departments.map((dept) => (
                 <div 
-                  key={dept.depart_id} 
+                  key={dept.id} 
                   className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50 hover:border-primary/30 transition-all group cursor-pointer"
                 >
                   <div className="font-black text-sm tracking-tight">{dept.name}</div>

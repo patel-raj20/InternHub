@@ -57,19 +57,23 @@ export function InternTable({ data, isLoading, mode, onDelete }: InternTableProp
           <TableRow>
             <TableHead className="font-black uppercase tracking-widest text-[10px]">ID</TableHead>
             <TableHead className="font-black uppercase tracking-widest text-[10px]">Name</TableHead>
-            <TableHead className="font-black uppercase tracking-widest text-[10px]">Email</TableHead>
+            <TableHead className="font-black uppercase tracking-widest text-[10px]">College</TableHead>
             <TableHead className="font-black uppercase tracking-widest text-[10px]">Status</TableHead>
             <TableHead className="font-black uppercase tracking-widest text-[10px]">Joining Date</TableHead>
-            <TableHead className="font-black uppercase tracking-widest text-[10px]">Backlogs</TableHead>
             <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((intern) => (
-            <TableRow key={intern.intern_id} className="hover:bg-muted/30 transition-colors">
+            <TableRow key={intern.id} className="hover:bg-muted/30 transition-colors">
               <TableCell className="font-black tracking-tighter">#{intern.enrollment_number}</TableCell>
-              <TableCell className="font-bold">{intern.full_name}</TableCell>
-              <TableCell className="text-muted-foreground">{intern.email}</TableCell>
+              <TableCell className="font-bold">
+                <div>
+                  <div className="font-bold">{intern.full_name}</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">{intern.email}</div>
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground text-xs font-medium">{intern.college_name || "N/A"}</TableCell>
               <TableCell>
                 <Badge
                   variant={
@@ -84,17 +88,16 @@ export function InternTable({ data, isLoading, mode, onDelete }: InternTableProp
                 </Badge>
               </TableCell>
               <TableCell className="text-xs font-bold">{new Date(intern.joining_date).toLocaleDateString()}</TableCell>
-              <TableCell className="text-center font-black">{intern.no_of_backlogs}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
-                  <Link href={`${mode === 'SUPER_ADMIN' ? '/super-admin' : '/admin'}/interns/${intern.intern_id}`}>
+                  <Link href={`${mode === 'SUPER_ADMIN' ? '/super-admin' : '/admin'}/interns/${intern.id}`}>
                     <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </Link>
                   {mode === "SUPER_ADMIN" && (
                     <>
-                      <Link href={`/super-admin/interns/${intern.intern_id}/edit`}>
+                      <Link href={`/super-admin/interns/${intern.id}/edit`}>
                         <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -103,7 +106,7 @@ export function InternTable({ data, isLoading, mode, onDelete }: InternTableProp
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                        onClick={() => onDelete?.(intern.intern_id)}
+                        onClick={() => onDelete?.(intern.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

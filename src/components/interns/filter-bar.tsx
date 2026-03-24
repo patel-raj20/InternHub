@@ -14,7 +14,7 @@ interface FilterBarProps {
   onStatusChange: (status: string) => void;
   department?: string;
   onDepartmentChange?: (dept: string) => void;
-  departments?: { depart_id: string; name: string }[];
+  departments?: { id: string; name: string }[];
 }
 
 export function FilterBar({ 
@@ -54,7 +54,7 @@ export function FilterBar({
             <SelectContent className="glass-card">
               <SelectItem value="ALL">All Departments</SelectItem>
               {departments.map((d) => (
-                <SelectItem key={d.depart_id} value={d.depart_id}>{d.name}</SelectItem>
+                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -10,29 +10,68 @@ export interface User {
 }
 
 export interface Department {
-  depart_id: string;
+  id: string; // Matches 'id' in DB
+  organization_id: string;
   name: string;
-  count?: number;
+  description?: string;
+  count?: number; // UI helper for intern count
   created_at: string;
 }
 
 export interface Intern {
-  intern_id: string;
+  id: string; // Matches 'id' in DB
   user_id: string;
   department_id: string;
   status: "ACTIVE" | "COMPLETED" | "DROPPED";
   created_at: string;
   
-  // Display/Optional fields
+  // Basic Info
   full_name: string;
+  email?: string;
+  password?: string;
   phone?: string;
   dob?: string;
   blood_group?: string;
-  enrollment_number: string;
-  joining_date: string;
-  no_of_backlogs: number;
   
-  // UI helper fields (often joined in SQL)
+  // Academic Info
+  college_name?: string;
+  degree?: string;
+  specialization?: string;
+  graduation_year?: number;
+  cgpa?: number;
+  enrollment_number: string;
+  
+  // Professional Links & Bio
+  github_url?: string;
+  linkedin_url?: string;
+  portfolio_url?: string;
+  bio?: string;
+  
+  // Skills & Certs (JSONB in DB)
+  skills?: any; // or string[]
+  certifications?: any; // or string[]
+  
+  // Location
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  
+  // Dates
+  joining_date: string;
+  end_date?: string;
+  
+  // UI helper fields
   department_name?: string;
-  email?: string; // Often joined from users table
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  description?: string;
+  industry?: string;
+  website?: string;
+  logo_url?: string;
+  created_by?: string;
+  created_at: string;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
 import { PageTransition } from "./page-transition";
@@ -14,36 +15,25 @@ export function ContentLayout({ children }: { children: ReactNode }) {
   const dispatch = useDispatch();
   const isLoginPage = pathname === "/login";
   const [mounted, setMounted] = useState(false);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     setMounted(true);
     
-    // Sync session from cookie on mount
-    const sessionCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="))
-      ?.split("=")[1];
-      
-    if (sessionCookie) {
-      try {
-        const session = JSON.parse(decodeURIComponent(sessionCookie));
-        if (session.role) {
-          dispatch(setRole(session.role));
-          if (session.email) {
-            dispatch(setUser({
-              id: "1",
-              name: session.email.split("@")[0],
-              email: session.email,
-              role: session.role,
-              department: "Engineering"
-            }));
-          }
-        }
-      } catch (e) {
-        console.error("Failed to sync session:", e);
+    if (status === "authenticated" && session?.user) {
+      const { role, email, firstName, lastName, id } = session.user as any;
+      if (role) {
+        dispatch(setRole(role));
+        dispatch(setUser({
+          id: id || "1",
+          name: firstName ? `${firstName} ${lastName || ""}` : email?.split("@")[0] || "User",
+          email: email || "",
+          role: role,
+          department: "Engineering" // Default if not in session
+        }));
       }
     }
-  }, [dispatch]);
+  }, [dispatch, session, status]);
 
   if (!mounted) return null;
 

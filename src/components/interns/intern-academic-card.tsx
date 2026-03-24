@@ -15,11 +15,20 @@ export function InternAcademicCard({ intern }: InternAcademicCardProps) {
           Academic Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
         <InfoItem label="Enrollment Number" value={intern.enrollment_number} />
         <InfoItem label="Department" value={intern.department_name || "N/A"} />
-        <InfoItem label="Joining Date" value={new Date(intern.joining_date).toLocaleDateString()} />
-        <InfoItem label="College" value="ABC Institute of Technology" /> {/* Placeholder */}
+        <InfoItem label="College" value={intern.college_name || "N/A"} />
+        <InfoItem label="Degree" value={intern.degree || "N/A"} />
+        <InfoItem label="Specialization" value={intern.specialization || "N/A"} />
+        <div className="grid grid-cols-2 gap-4">
+           <InfoItem label="Grad Year" value={intern.graduation_year?.toString() || "N/A"} />
+           <InfoItem label="CGPA" value={intern.cgpa?.toString() || "N/A"} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+           <InfoItem label="Joining Date" value={new Date(intern.joining_date).toLocaleDateString()} />
+           <InfoItem label="End Date" value={intern.end_date ? new Date(intern.end_date).toLocaleDateString() : "Ongoing"} />
+        </div>
       </CardContent>
     </Card>
   );
@@ -28,8 +37,8 @@ export function InternAcademicCard({ intern }: InternAcademicCardProps) {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase">{label}</p>
-      <p className="text-sm font-semibold">{value}</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">{label}</p>
+      <p className="text-sm font-bold">{value}</p>
     </div>
   );
 }
