@@ -72,6 +72,24 @@ export const authOptions = {
                     return null;
                 }
 
+                // ✅ UPDATE users table field(last_login_at )
+                try {
+                    await gqlFetch(`
+                        mutation UpdateLastLogin($id: uuid!) {
+                            update_users_by_pk(
+                                pk_columns: {id: $id},
+                                _set: {last_login_at: "now()"}
+                            ) {
+                                id
+                            }
+                        }
+                    `, { id: user.id });
+
+                    console.log("Last login updated");  // TODO: DEBUGGING
+                } catch (error) {
+                    console.error("❌ GQL Fetch failed (Update last_login_at):", error.message);
+                }
+
                 // Return user object (without password hash)
                 return {
                     id: String(user.id),    // Ensure ID is a string for JWT encoding
