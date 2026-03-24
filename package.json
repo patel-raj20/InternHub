@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "formik": "^2.4.9",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.0",
     "next-auth": "^4.24.13",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
