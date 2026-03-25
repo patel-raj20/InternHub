@@ -1,9 +1,9 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import toast from "react-hot-toast";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import Loader from "@/components/Loader/page";
@@ -37,9 +37,11 @@ export default function LoginPage() {
 
             if (response.error) {
                 setServerError("Invalid email or password. Please try again.");
+                toast.error("Invalid email or password. Please try again.");
             } else {
                 router.refresh(); // Refresh to update session state
                 router.push("/dashboard"); // Redirect to dashboard on successful login
+                toast.success("Login successful!");
             }
 
             setLoading(false);
