@@ -68,7 +68,7 @@ export default function LoginPage() {
                 } else {
                     router.refresh();
                     router.push("/dashboard");
-                    toast.success("Identity Verified. Establishing Connection...");
+                    toast.success("Login Successful. Establishing Connection...");
                 }
             } catch (err) {
                 setServerError("A connection error occurred.");
