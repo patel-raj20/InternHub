@@ -63,6 +63,7 @@ export interface Intern {
   
   // UI helper fields
   department_name?: string;
+  backlogs?: number;
 }
 
 export interface Organization {

@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function DepartmentsPage() {
+  const router = useRouter();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,10 +35,6 @@ export default function DepartmentsPage() {
   useEffect(() => {
     fetchDepartments();
   }, []);
-
-  const handleCreate = () => {
-    router.push("/super-admin/departments/create");
-  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this department?")) {
@@ -85,8 +82,8 @@ export default function DepartmentsPage() {
               </TableHeader>
               <TableBody>
                 {departments.map((dept) => (
-                  <TableRow key={dept.depart_id} className="hover:bg-muted/20 transition-colors">
-                    <TableCell className="font-mono text-[10px] font-bold text-muted-foreground">#{dept.depart_id}</TableCell>
+                  <TableRow key={dept.id} className="hover:bg-muted/20 transition-colors">
+                    <TableCell className="font-mono text-[10px] font-bold text-muted-foreground">#{dept.id}</TableCell>
                     <TableCell className="font-black text-sm tracking-tight">{dept.name}</TableCell>
                     <TableCell>
                       <span className="font-black text-primary">{dept.count}</span>
@@ -98,7 +95,7 @@ export default function DepartmentsPage() {
                         variant="ghost" 
                         size="sm" 
                         className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all"
-                        onClick={() => handleDelete(dept.depart_id)}
+                        onClick={() => handleDelete(dept.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

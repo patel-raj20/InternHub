@@ -174,7 +174,7 @@ export function InternForm({ mode, initialData, departments, onSubmit }: InternF
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
-                      <SelectItem key={dept.id || dept.depart_id } value={dept.id || dept.depart_id}>{dept.name}</SelectItem>
+                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -28,7 +28,7 @@ export default async function proxy(request: NextRequest) {
       const key = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
       const { payload } = await jwtVerify(tokenString, key, { algorithms: ["HS256"] });
       token = payload;
-    } catch (e) {
+    } catch (e: any) {
       console.error("[Middleware] Token verification failed:", e.message);
     }
   }

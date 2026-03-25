@@ -21,9 +21,9 @@ export function InternStatsCards({ intern }: InternStatsCardsProps) {
       />
       <StatCard
         title="Backlogs"
-        value={intern.backlogs}
+        value={intern.backlogs ?? 0}
         icon={<AlertCircle className="w-4 h-4" />}
-        trend={intern.backlogs > 0 ? { value: intern.backlogs, label: "Needs attention", isPositive: false } : undefined}
+        trend={(intern.backlogs ?? 0) > 0 ? { value: intern.backlogs!, label: "Needs attention", isPositive: false } : undefined}
       />
       <StatCard
         title="Status"

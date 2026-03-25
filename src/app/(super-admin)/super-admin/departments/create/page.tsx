@@ -13,7 +13,7 @@ export default function CreateDepartmentPage() {
   const handleSubmit = async (data: { name: string }) => {
     setIsLoading(true);
     try {
-      await createDepartment(data.name);
+      await createDepartment("org1", { name: data.name });
       router.push("/super-admin/departments");
       router.refresh();
     } catch (error) {

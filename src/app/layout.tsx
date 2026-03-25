@@ -5,6 +5,7 @@ import { ContentLayout } from "@/components/layout/content-layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProviders } from "@/components/providers";
 import { MeshBackground } from "@/components/layout/mesh-background";
+import { Toaster } from 'react-hot-toast';
 
 const font = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
         >
             <MeshBackground />
             <AppProviders>
+              <Toaster />
               <ContentLayout>
                 {children}
               </ContentLayout>
