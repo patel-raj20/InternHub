@@ -1,24 +1,45 @@
 import './globals.css'
-import SessionWrapper from '@/utils/SessionWrapper'
+import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { ContentLayout } from "@/components/layout/content-layout";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AppProviders } from "@/components/providers";
+import { MeshBackground } from "@/components/layout/mesh-background";
 import { Toaster } from 'react-hot-toast';
 
-export const metadata = {
-  title: 'InternHub - An internship management system',
-  description: 'An internship management system for students and companies to connect and manage internship opportunities. InternHub built with Next.js, React, Tailwind CSS.',
-  author: {
-    name: 'InternHub Team',
-    email: 'support@internhub.com',
-  }
-}
+const font = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta"
+});
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  title: "InternHub | Stovest Premium Dashboard",
+  description: "High-end intern management system with Glassmorphism",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body className='bg-blue-950 text-blue-100'>
-        <SessionWrapper>
-          <Toaster />
-          {children}
-        </SessionWrapper>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${font.className} min-h-screen bg-background text-foreground momentum-scroll`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+            <MeshBackground />
+            <AppProviders>
+              <Toaster />
+              <ContentLayout>
+                {children}
+              </ContentLayout>
+            </AppProviders>
+        </ThemeProvider>
       </body>
     </html>
   );
