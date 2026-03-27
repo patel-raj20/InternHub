@@ -9,6 +9,17 @@ async function testQuery() {
         email
         role
       }
+      interns {
+        id
+        user_id
+        organization_id
+        college_name
+      }
+      interns_aggregate {
+        aggregate {
+          count
+        }
+      }
     }
   `;
 
@@ -25,7 +36,10 @@ async function testQuery() {
   if (json.errors) {
     console.error('GQL errors:', json.errors);
   } else {
-    console.log('Users found:', json.data.users);
+    console.log('Users found:', json.data.users.length);
+    console.log('Interns found:', json.data.interns.length);
+    console.log('Total count from aggregate:', json.data.interns_aggregate.aggregate.count);
+    console.log('Sample intern organization ID:', json.data.interns[0]?.organization_id);
   }
 }
 

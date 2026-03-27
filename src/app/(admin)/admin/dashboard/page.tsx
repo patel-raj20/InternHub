@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, UserPlus, Building2 } from "lucide-react";
 import Link from "next/link";
 import { GrowthChart } from "@/components/charts/growth-chart";
-import { DepartmentInfoCard } from "@/components/interns/department-info-card";
+import { JoinTrendChart } from "@/components/charts/join-trend-chart";
+import { TopCollegesChart } from "@/components/charts/top-colleges-chart";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getInterns } from "@/lib/api/interns";
+import { graphqlService } from "@/lib/services/graphql-service";
 import { Intern } from "@/lib/types";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import toast from "react-hot-toast";
 
 const container = {
   hidden: { opacity: 0 },
@@ -28,22 +32,59 @@ const item = {
 
 export default function DeptAdminDashboardPage() {
   const [interns, setInterns] = useState<Intern[]>([]);
+  const [deptName, setDeptName] = useState<string>("Department");
   const [isLoading, setIsLoading] = useState(true);
   
+  const { organization_id, department_id } = useSelector((state: RootState) => state.user);
+  
   useEffect(() => {
-    const fetchInterns = async () => {
+    const fetchData = async () => {
+      if (!organization_id || !department_id) return;
+      
+      setIsLoading(true);
       try {
-        // Mocking the current admin's department as 'dept1' (Computer Science)
-        const data = await getInterns('dept1');
-        setInterns(data);
+        const [iData, dData] = await Promise.all([
+          graphqlService.getInterns(organization_id, department_id),
+          graphqlService.getDepartments(organization_id)
+        ]);
+        setInterns(iData);
+        const currentDept = dData.find(d => d.id === department_id);
+        if (currentDept) setDeptName(currentDept.name);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load department dashboard");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInterns();
-  }, []);
+    fetchData();
+  }, [organization_id, department_id]);
   
   const recentInterns = interns.slice(0, 5);
+
+  const growthData = Object.values(
+    interns.reduce((acc: any, intern) => {
+      const date = new Date(intern.joining_date);
+      const monthYear = date.toLocaleString('default', { month: 'short' });
+      if (!acc[monthYear]) {
+        acc[monthYear] = { name: monthYear, total: 0, sortKey: date.getTime() };
+      }
+      acc[monthYear].total += 1;
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => a.sortKey - b.sortKey)
+   .map(({ name, total }: any) => ({ name, total }));
+
+  const collegeData = Object.values(
+    interns.reduce((acc: any, intern) => {
+      const college = intern.college_name || "Unknown Institution";
+      if (!acc[college]) {
+        acc[college] = { name: college, total: 0 };
+      }
+      acc[college].total += 1;
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => b.total - a.total);
 
   return (
     <motion.div
@@ -58,31 +99,26 @@ export default function DeptAdminDashboardPage() {
             <Building2 className="w-4 h-4 text-primary neon-glow" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">Department Workspace</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter leading-none">Computer Science</h1>
+          <h1 className="text-4xl font-black tracking-tighter leading-none">{deptName}</h1>
           <p className="text-muted-foreground font-medium">Manage your department's interns and performance.</p>
         </div>
-        <Link href="/admin/create-intern">
-          <Button className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg neon-glow scale-105 hover:scale-110 active:scale-95 transition-all">
-            <UserPlus className="w-4 h-4 mr-2" /> Add Intern
-          </Button>
-        </Link>
       </motion.div>
 
       <motion.div variants={item}>
         <DeptStatsCards 
           total={interns.length} 
-          active={interns.filter(i => i.status === 'ACTIVE').length} 
-          completed={interns.filter(i => i.status === 'COMPLETED').length} 
+          active={interns.filter(i => i.user.status === 'ACTIVE').length} 
+          completed={interns.filter(i => i.user.status === 'COMPLETED').length} 
         />
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
         <motion.div variants={item} className="lg:col-span-8">
-          <GrowthChart />
+          <JoinTrendChart data={growthData} />
         </motion.div>
         
         <motion.div variants={item} className="lg:col-span-4">
-          <DepartmentInfoCard name="Computer Science" totalInterns={interns.length} />
+          <TopCollegesChart data={collegeData as any} />
         </motion.div>
       </div>
 

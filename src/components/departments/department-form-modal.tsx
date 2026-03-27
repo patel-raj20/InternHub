@@ -61,31 +61,33 @@ export function DepartmentFormModal({ isOpen, onClose, onSubmit, initialData }: 
           />
         </div>
 
-        <div className="pt-4 border-t border-border/30">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6">Department Admin Details</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">First Name</label>
-              <Input {...register("adminFirstName", { required: "First name is required" })} placeholder="Admin's first name" />
+        {!initialData && (
+          <div className="pt-4 border-t border-border/30">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6">Department Admin Details</h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">First Name</label>
+                <Input {...register("adminFirstName", { required: !initialData ? "First name is required" : false })} placeholder="Admin's first name" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Last Name</label>
+                <Input {...register("adminLastName", { required: !initialData ? "Last name is required" : false })} placeholder="Admin's last name" />
+              </div>
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Last Name</label>
-              <Input {...register("adminLastName", { required: "Last name is required" })} placeholder="Admin's last name" />
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Admin Email</label>
-              <Input {...register("adminEmail", { required: "Email is required" })} type="email" placeholder="admin@example.com" />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Admin Password</label>
-              <Input {...register("adminPassword", { required: "Password is required" })} type="password" placeholder="Set temporary password" />
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Admin Email</label>
+                <Input {...register("adminEmail", { required: !initialData ? "Email is required" : false })} type="email" placeholder="admin@example.com" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Admin Password</label>
+                <Input {...register("adminPassword", { required: !initialData ? "Password is required" : false })} type="password" placeholder="Set temporary password" />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="flex gap-4 justify-end pt-4">
           <Button type="button" variant="outline" onClick={onClose} className="rounded-xl font-bold uppercase tracking-widest text-[10px]">

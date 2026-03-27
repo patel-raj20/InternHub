@@ -1,9 +1,6 @@
-import { getInterns } from "@/lib/api/interns";
 import { InternsList } from "@/components/interns/interns-list";
 
-export default async function AdminInternsPage() {
-  const interns = await getInterns();
-
+export default function AdminInternsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8 text-left">
@@ -11,7 +8,7 @@ export default async function AdminInternsPage() {
         <p className="text-muted-foreground mt-1">View and filter interns assigned to your department.</p>
       </div>
 
-      <InternsList initialData={interns} mode="ADMIN" />
+      <InternsList mode="ADMIN" />
     </div>
   );
 }

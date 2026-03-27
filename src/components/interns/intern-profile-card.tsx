@@ -20,15 +20,15 @@ export function InternProfileCard({ intern }: InternProfileCardProps) {
         <div className="flex flex-col md:flex-row gap-8">
           <div className="flex-shrink-0 flex items-center justify-center">
             <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-primary/20">
-              <span className="text-4xl font-bold">{intern.full_name.charAt(0)}</span>
+              <span className="text-4xl font-bold">{intern.user.first_name.charAt(0)}</span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 flex-1">
-            <InfoItem label="Full Name" value={intern.full_name} />
-            <InfoItem label="Email" value={intern.email || "N/A"} />
-            <InfoItem label="Phone" value={intern.phone || "N/A"} />
-            <InfoItem label="DOB" value={intern.dob || "N/A"} />
-            <InfoItem label="Blood Group" value={intern.blood_group || "N/A"} />
+            <InfoItem label="Full Name" value={`${intern.user.first_name} ${intern.user.last_name || ""}`} />
+            <InfoItem label="Email" value={intern.user.email} />
+            <InfoItem label="Phone" value={intern.user.phone || "N/A"} />
+            <InfoItem label="DOB" value={intern.user.invite_expires_at || "N/A"} /> 
+            <InfoItem label="Status" value={intern.user.status} />
           </div>
         </div>
 

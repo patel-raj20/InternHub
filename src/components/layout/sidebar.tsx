@@ -11,6 +11,7 @@ import {
   Settings, 
   LogOut,
   Building2,
+  FileText,
   LucideIcon
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -33,15 +34,13 @@ const menuConfigs: Record<UserRole, MenuItem[]> = {
   ],
   DEPT_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
-    { icon: Users, label: "Manage Interns", href: "/admin/interns" },
-    { icon: UserPlus, label: "Add Intern", href: "/admin/create-intern" },
+    { icon: Users, label: "All Interns", href: "/admin/reports" },
   ],
   SUPER_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/super-admin/dashboard" },
-    { icon: Users, label: "All Interns", href: "/super-admin/interns" },
     { icon: Building2, label: "Organizations", href: "/super-admin/organizations" },
+    { icon: Users, label: "All Interns", href: "/super-admin/reports" },
     { icon: UserPlus, label: "Add Intern", href: "/super-admin/create-intern" },
-    { icon: Settings, label: "Settings", href: "/super-admin/settings" },
   ],
 };
 
@@ -113,10 +112,6 @@ export function Sidebar() {
           <div className="px-3 py-2 text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
             System Control
           </div>
-          <button className="flex w-full items-center rounded-xl px-4 py-2.5 text-sm font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground">
-            <Settings className="mr-3 h-5 w-5" />
-            Settings
-          </button>
           <button 
             onClick={() => {
               signOut({ callbackUrl: "/login" });

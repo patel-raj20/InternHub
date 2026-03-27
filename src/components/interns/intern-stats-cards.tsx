@@ -1,5 +1,5 @@
 import { StatCard } from "@/components/ui/stat-card";
-import { Calendar, Building2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Calendar, Building2, GraduationCap, CheckCircle2 } from "lucide-react";
 import { Intern } from "@/lib/types";
 
 interface InternStatsCardsProps {
@@ -16,18 +16,17 @@ export function InternStatsCards({ intern }: InternStatsCardsProps) {
       />
       <StatCard
         title="Department"
-        value={intern.department_name || "N/A"}
+        value={intern.user?.department?.name || "N/A"}
         icon={<Building2 className="w-4 h-4" />}
       />
       <StatCard
-        title="Backlogs"
-        value={intern.backlogs ?? 0}
-        icon={<AlertCircle className="w-4 h-4" />}
-        trend={(intern.backlogs ?? 0) > 0 ? { value: intern.backlogs!, label: "Needs attention", isPositive: false } : undefined}
+        title="CGPA"
+        value={intern.cgpa ?? "N/A"}
+        icon={<GraduationCap className="w-4 h-4" />}
       />
       <StatCard
         title="Status"
-        value={intern.status}
+        value={intern.user?.status || "N/A"}
         icon={<CheckCircle2 className="w-4 h-4" />}
       />
     </div>

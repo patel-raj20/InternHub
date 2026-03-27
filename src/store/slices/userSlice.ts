@@ -5,7 +5,8 @@ interface UserState {
   name: string | null;
   email: string | null;
   role: "INTERN" | "DEPT_ADMIN" | "SUPER_ADMIN" | null;
-  department: string | null;
+  department_id: string | null;
+  organization_id: string | null;
 }
 
 const initialState: UserState = {
@@ -13,7 +14,8 @@ const initialState: UserState = {
   name: null,
   email: null,
   role: null,
-  department: null,
+  department_id: null,
+  organization_id: null,
 };
 
 const userSlice = createSlice({

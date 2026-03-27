@@ -27,10 +27,13 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <Button
             key={page}
-            variant={page === currentPage ? "secondary" : "outline"}
+            variant={page === currentPage ? "primary" : "outline"}
             size="sm"
             onClick={() => onPageChange(page)}
-            className="w-8 h-8 p-0"
+            className={cn(
+              "w-8 h-8 p-0 transition-all duration-300",
+              page === currentPage ? "shadow-md shadow-primary/20 scale-110" : "hover:bg-muted"
+            )}
           >
             {page}
           </Button>

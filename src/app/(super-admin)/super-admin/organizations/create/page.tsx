@@ -1,19 +1,26 @@
 "use client";
 
 import { OrganizationForm } from "@/components/organizations/organization-form";
-import { createOrganization } from "@/lib/api/organizations";
+import { graphqlService } from "@/lib/services/graphql-service";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
 
   const handleSubmit = async (data: any) => {
     try {
-      await createOrganization(data);
+      await graphqlService.addOrganization({
+        ...data,
+        industry: data.industry || "",
+        website: data.website || "",
+      });
+      toast.success("Organization created successfully");
       router.push("/super-admin/organizations");
       router.refresh();
     } catch (error) {
       console.error(error);
+      toast.error("Failed to create organization");
     }
   };
 

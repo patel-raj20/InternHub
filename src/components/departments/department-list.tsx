@@ -19,7 +19,7 @@ export function DepartmentList({ departments, onEdit, onDelete }: DepartmentList
         <TableHeader className="bg-muted/50">
           <TableRow>
             <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Department Name</TableHead>
-            <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Description</TableHead>
+            <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Department Head</TableHead>
             <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Total Interns</TableHead>
             <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-right">Actions</TableHead>
           </TableRow>
@@ -27,7 +27,7 @@ export function DepartmentList({ departments, onEdit, onDelete }: DepartmentList
         <TableBody>
           {departments.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="h-32 text-center text-muted-foreground font-medium">
+              <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
                 No departments registered for this organization.
               </TableCell>
             </TableRow>
@@ -39,17 +39,27 @@ export function DepartmentList({ departments, onEdit, onDelete }: DepartmentList
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
                       <Building2 className="w-4 h-4 text-primary" />
                     </div>
-                    <span className="font-bold tracking-tight">{dept.name}</span>
+                    <div className="flex flex-col">
+                      <span className="font-bold tracking-tight">{dept.name}</span>
+                      <span className="text-[9px] text-muted-foreground truncate max-w-[150px]">{dept.description || "No description"}</span>
+                    </div>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[300px] truncate text-muted-foreground text-xs leading-relaxed">
-                  {dept.description || "—"}
+                <TableCell>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-bold tracking-tight text-sm text-foreground">
+                      {dept.head ? `${dept.head.first_name} ${dept.head.last_name || ""}` : "—"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      {dept.head ? dept.head.email : "No Admin Assigned"}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Users size={14} className="text-muted-foreground/60" />
                     <Badge variant="active" className="font-black text-[9px] px-2 py-0">
-                      {dept.count || 0} Interns
+                      {dept.intern_count || 0} Interns
                     </Badge>
                   </div>
                 </TableCell>

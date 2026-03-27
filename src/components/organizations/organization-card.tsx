@@ -3,14 +3,16 @@
 import { Organization } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Globe, ExternalLink } from "lucide-react";
+import { Building2, Globe, ExternalLink, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 interface OrganizationCardProps {
   org: Organization;
+  onDelete?: () => void;
 }
 
-export function OrganizationCard({ org }: OrganizationCardProps) {
+export function OrganizationCard({ org, onDelete }: OrganizationCardProps) {
   const router = useRouter();
 
   return (
@@ -29,6 +31,19 @@ export function OrganizationCard({ org }: OrganizationCardProps) {
                <Badge variant="default" className="mt-1 text-[8px] px-2 py-0">{org.industry || "Uncategorized"}</Badge>
              </div>
           </div>
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="pt-6">

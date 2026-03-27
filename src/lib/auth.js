@@ -31,8 +31,10 @@ export const authOptions = {
                                 first_name
                                 last_name
                                 password_hash
-                                role
                                 email
+                                organization_id
+                                department_id
+                                role
                             }
                         }
                     `, { email: credentials.email });
@@ -67,6 +69,8 @@ export const authOptions = {
                     lastName: user.last_name,
                     email: user.email,
                     role: user.role,
+                    organization_id: user.organization_id,
+                    department_id: user.department_id,
                 };
             },
         }),
@@ -112,6 +116,8 @@ export const authOptions = {
                 token.lastName = user.lastName;
                 token.email = user.email;
                 token.role = user.role;
+                token.organization_id = user.organization_id;
+                token.department_id = user.department_id;
             }
             return token;
         },
@@ -122,6 +128,8 @@ export const authOptions = {
                 session.user.lastName = token.lastName;
                 session.user.email = token.email;
                 session.user.role = token.role;
+                session.user.organization_id = token.organization_id;
+                session.user.department_id = token.department_id;
             }
             return session;
         },

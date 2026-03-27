@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDepartments, deleteDepartment, createDepartment } from "@/lib/api/departments";
+import { graphqlService } from "@/lib/services/graphql-service";
 import {
   Table,
   TableBody,
@@ -16,17 +16,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Department } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import toast from "react-hot-toast";
 
 export default function DepartmentsPage() {
   const router = useRouter();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { organization_id } = useSelector((state: RootState) => state.user);
 
   const fetchDepartments = async () => {
+    if (!organization_id) return;
+    
     setIsLoading(true);
     try {
-      const data = await getDepartments();
+      const data = await graphqlService.getDepartments(organization_id);
       setDepartments([...data]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load departments");
     } finally {
       setIsLoading(false);
     }
@@ -34,12 +43,18 @@ export default function DepartmentsPage() {
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [organization_id]);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this department?")) {
-      await deleteDepartment(id);
-      fetchDepartments();
+      try {
+        await graphqlService.deleteDepartment(id);
+        toast.success("Department deleted successfully");
+        fetchDepartments();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete department");
+      }
     }
   };
 
@@ -86,7 +101,7 @@ export default function DepartmentsPage() {
                     <TableCell className="font-mono text-[10px] font-bold text-muted-foreground">#{dept.id}</TableCell>
                     <TableCell className="font-black text-sm tracking-tight">{dept.name}</TableCell>
                     <TableCell>
-                      <span className="font-black text-primary">{dept.count}</span>
+                      <span className="font-black text-primary">{dept.intern_count}</span>
                       <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest ml-2">Interns</span>
                     </TableCell>
                     <TableCell className="text-xs font-bold text-muted-foreground/80">{new Date(dept.created_at).toLocaleDateString()}</TableCell>

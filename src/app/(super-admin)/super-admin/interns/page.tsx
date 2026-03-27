@@ -1,14 +1,9 @@
-import { getInterns } from "@/lib/api/interns";
-import { getDepartments } from "@/lib/api/departments";
 import { InternsList } from "@/components/interns/interns-list";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
 
-export default async function SuperAdminInternsPage() {
-  const interns = await getInterns();
-  const departments = await getDepartments();
-
+export default function SuperAdminInternsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -23,7 +18,7 @@ export default async function SuperAdminInternsPage() {
         </Link>
       </div>
 
-      <InternsList initialData={interns} mode="SUPER_ADMIN" departments={departments} />
+      <InternsList mode="SUPER_ADMIN" />
     </div>
   );
 }

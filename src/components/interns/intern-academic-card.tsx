@@ -16,8 +16,8 @@ export function InternAcademicCard({ intern }: InternAcademicCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
-        <InfoItem label="Enrollment Number" value={intern.enrollment_number} />
-        <InfoItem label="Department" value={intern.department_name || "N/A"} />
+        <InfoItem label="Internal ID" value={intern.id.slice(0, 8)} />
+        <InfoItem label="Department" value={intern.user?.department?.name || "N/A"} />
         <InfoItem label="College" value={intern.college_name || "N/A"} />
         <InfoItem label="Degree" value={intern.degree || "N/A"} />
         <InfoItem label="Specialization" value={intern.specialization || "N/A"} />

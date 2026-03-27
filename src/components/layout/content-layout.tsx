@@ -29,7 +29,8 @@ export function ContentLayout({ children }: { children: ReactNode }) {
           name: firstName ? `${firstName} ${lastName || ""}` : email?.split("@")[0] || "User",
           email: email || "",
           role: role,
-          department: "Engineering" // Default if not in session
+          organization_id: session.user.organization_id || null,
+          department_id: session.user.department_id || null,
         }));
       }
     }

@@ -9,73 +9,48 @@ interface StatCardProps {
   value: string | number;
   description?: string;
   icon?: React.ReactNode;
-  trend?: {
-    value: number;
-    label: string;
-    isPositive?: boolean;
-  };
+  color?: string;
   className?: string;
 }
 
-export function StatCard({ title, value, description, icon, trend, className }: StatCardProps) {
+export function StatCard({ title, value, description, icon, color = "var(--primary)", className }: StatCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -5, scale: 1.02 }}
+      whileHover={{ y: -5, scale: 1.01 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
-      <Card className={cn("overflow-hidden border-border/50 group relative", className)}>
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <Card className={cn("overflow-hidden border-border/40 group relative rounded-[2rem] bg-background/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-500", className)}>
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 rounded-full blur-3xl opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity" style={{ backgroundColor: color }} />
         
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-          <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">
-            {title}
-          </CardTitle>
-          {icon && (
-            <div className="p-2 bg-primary/10 rounded-xl text-primary neon-glow group-hover:scale-110 transition-transform duration-300">
-              {icon}
-            </div>
-          )}
-        </CardHeader>
-        
-        <CardContent className="relative z-10">
-          <div className="flex items-end justify-between">
+        <CardContent className="p-8 relative z-10">
+          <div className="flex justify-between items-start mb-6">
             <div className="space-y-1">
-              <div className="text-3xl font-black tracking-tighter">{value}</div>
-              {description && <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest leading-none">{description}</p>}
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">
+                {title}
+              </span>
+              <h3 className="text-4xl font-black tracking-tighter mt-2">
+                {typeof value === 'number' ? value.toLocaleString() : value}
+              </h3>
             </div>
             
-            {/* Mini Sparkline SVG */}
-            <div className="h-10 w-20 opacity-40 group-hover:opacity-100 transition-opacity duration-500">
-              <svg viewBox="0 0 100 40" className="h-full w-full overflow-visible">
-                <path
-                  d={trend?.isPositive 
-                    ? "M0,35 Q20,30 40,20 T80,10 T100,5" 
-                    : "M0,5 Q20,10 40,20 T80,30 T100,35"}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  className={trend?.isPositive ? "text-green-500" : "text-red-500"}
-                />
-              </svg>
-            </div>
+            {icon && (
+              <div 
+                className="p-3.5 rounded-[1.25rem] transition-all duration-500 group-hover:scale-110 shadow-sm"
+                style={{ 
+                  backgroundColor: `${color}15`, 
+                  border: `1.5px solid ${color}25`,
+                  color: color
+                }}
+              >
+                {icon}
+              </div>
+            )}
           </div>
 
-          {trend && (
-            <div className="flex items-center mt-4 space-x-2">
-              <span
-                className={cn(
-                  "text-[10px] font-black px-2 py-0.5 rounded-lg border flex items-center gap-1",
-                  trend.isPositive 
-                    ? "bg-green-500/10 text-green-500 border-green-500/20" 
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                )}
-              >
-                {trend.isPositive ? "↑" : "↓"} {trend.value}%
-              </span>
-              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">{trend.label}</span>
-            </div>
-          )}
+          <div className="flex items-end justify-between">
+            {/* Legend / Sparkline placeholder removed for clean UI */}
+          </div>
         </CardContent>
       </Card>
     </motion.div>

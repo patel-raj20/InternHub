@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,13 +23,30 @@ interface InternFormProps {
   onSubmit: (data: any) => Promise<void>;
 }
 
+interface FormIntern extends Partial<Intern> {
+  full_name?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  enrollment_number?: string;
+  dob?: string;
+  blood_group?: string;
+  [key: string]: any;
+}
+
 export function InternForm({ mode, initialData, departments, onSubmit }: InternFormProps) {
   const router = useRouter();
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: initialData || {
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormIntern>({
+    defaultValues: (initialData as FormIntern) || {
       status: "ACTIVE",
     },
   });
+
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

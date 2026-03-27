@@ -10,20 +10,21 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const data = [
-  { name: "Jan", total: 100 },
-  { name: "Feb", total: 120 },
-  { name: "Mar", total: 170 },
-  { name: "Apr", total: 140 },
-  { name: "May", total: 210 },
-  { name: "Jun", total: 190 },
-  { name: "Jul", total: 240 },
-  { name: "Aug", total: 280 },
-  { name: "Sep", total: 260 },
-  { name: "Oct", total: 320 },
-];
+interface GrowthChartProps {
+  data: { name: string; total: number }[];
+}
 
-export function GrowthChart() {
+export function GrowthChart({ data }: GrowthChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <Card className="col-span-4 border-border/50">
+        <CardHeader>
+           <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 text-center py-20">No growth data available yet</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-4 border-border/50">
       <CardHeader>

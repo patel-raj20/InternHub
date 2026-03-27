@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { InternForm } from "@/components/forms/intern-form";
-import { createIntern } from "@/lib/api/interns";
+import { graphqlService } from "@/lib/services/graphql-service";
 import { Department } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import toast from "react-hot-toast";
+
 export default function CreateInternPage({ 
   departments, 
   redirectPath = "/super-admin/interns",
@@ -14,15 +19,41 @@ export default function CreateInternPage({
   title?: string
 }) {
   const router = useRouter();
+  const { organization_id } = useSelector((state: RootState) => state.user);
+  const [internalDepartments, setInternalDepartments] = useState<Department[]>(departments);
 
-  const handleSubmit = async (data: any) => {
+  useEffect(() => {
+    const fetchDepts = async () => {
+      if (organization_id && (!departments || departments.length === 0)) {
+        try {
+          const depts = await graphqlService.getDepartments(organization_id);
+          setInternalDepartments(depts);
+        } catch (error) {
+          console.error("Failed to fetch departments:", error);
+        }
+      }
+    };
+    fetchDepts();
+  }, [organization_id, departments]);
+
+  const handleSubmit = async (formData: any) => {
+    if (!organization_id) {
+      toast.error("Organization ID missing. Please log in again.");
+      return;
+    }
+
     try {
-      await createIntern(data);
+      await graphqlService.addIntern({
+        ...formData,
+        organization_id,
+      });
+      
+      toast.success("Intern created successfully!");
       router.push(redirectPath);
       router.refresh();
     } catch (error) {
       console.error(error);
-      // toast.error("Failed to create intern");
+      toast.error("Failed to create intern");
     }
   };
 
@@ -35,7 +66,7 @@ export default function CreateInternPage({
 
       <InternForm 
         mode="create" 
-        departments={departments} 
+        departments={internalDepartments} 
         onSubmit={handleSubmit} 
       />
     </div>

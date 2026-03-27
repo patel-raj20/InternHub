@@ -1,23 +1,38 @@
 "use client";
 
 import { DepartmentForm } from "@/components/forms/department-form";
-import { createDepartment } from "@/lib/api/departments";
+import { graphqlService } from "@/lib/services/graphql-service";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Building2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import toast from "react-hot-toast";
 
 export default function CreateDepartmentPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { organization_id } = useSelector((state: RootState) => state.user);
 
   const handleSubmit = async (data: { name: string }) => {
+    if (!organization_id) {
+      toast.error("Organization ID missing.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await createDepartment("org1", { name: data.name });
+      await graphqlService.addDepartment({
+        name: data.name,
+        organization_id,
+        description: "", // Can be extended in form
+      });
+      toast.success("Department initialized successfully!");
       router.push("/super-admin/departments");
       router.refresh();
     } catch (error) {
       console.error(error);
+      toast.error("Failed to initialize department.");
     } finally {
       setIsLoading(false);
     }
