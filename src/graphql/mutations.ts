@@ -88,3 +88,37 @@ export const DELETE_DEPARTMENT = gql`
     }
   }
 `;
+
+// mutations.ts
+export const UPDATE_USER_INVITE = gql`
+mutation UpdateUserInvite($id: uuid!, $token: String!, $expires_at: timestamptz!) {
+  update_users_by_pk(
+    pk_columns: { id: $id }
+    _set: {
+      invite_token: $token
+      invite_expires_at: $expires_at
+      invite_status: "PENDING"
+    }
+  ) {
+    id
+    email
+    invite_status
+  }
+}
+`;
+
+export const ACCEPT_INVITE = gql`
+mutation AcceptInvite($id: uuid!, $password: String!) {
+  update_users_by_pk(
+    pk_columns: { id: $id }
+    _set: {
+      password_hash: $password
+      invite_status: "ACCEPTED"
+      invite_token: null
+      invite_expires_at: null
+    }
+  ) {
+    id
+  }
+}
+`;

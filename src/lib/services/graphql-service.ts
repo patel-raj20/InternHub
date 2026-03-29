@@ -2,6 +2,7 @@ import { client } from "@/lib/apollo-client";
 import * as Queries from "@/graphql/queries";
 import * as Mutations from "@/graphql/mutations";
 import { Intern, Department, Organization } from "@/lib/types";
+import bcrypt from "bcryptjs";
 
 /**
  * GraphQLService - Encapsulates all GraphQL operations.
@@ -9,11 +10,11 @@ import { Intern, Department, Organization } from "@/lib/types";
  */
 class GraphQLService {
   // --- Interns ---
-  
+
   async getInterns(organizationId?: string, departmentId?: string): Promise<Intern[]> {
     const { data } = await client.query<{ interns: Intern[] }>({
       query: Queries.GET_INTERNS,
-      variables: { 
+      variables: {
         where: {
           ...(organizationId ? { organization_id: { _eq: organizationId } } : {}),
           ...(departmentId ? { user: { department_id: { _eq: departmentId } } } : {})
@@ -43,6 +44,16 @@ class GraphQLService {
   }
 
   async addIntern(formData: any) {
+    let token = "";
+    if(formData.invite_token){
+      token = formData.invite_token;
+    }else{
+      token = bcrypt.hashSync(formData.email, 10);
+    }
+    
+    
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+
     const internData: any = {
       organization_id: formData.organization_id,
       college_name: formData.college_name,
@@ -67,7 +78,7 @@ class GraphQLService {
     if (formData.full_name) {
       const [first_name, ...lastNameParts] = formData.full_name.split(' ');
       const last_name = lastNameParts.join(' ');
-      
+
       internData.user = {
         data: {
           organization_id: formData.organization_id,
@@ -78,8 +89,11 @@ class GraphQLService {
           phone: formData.phone,
           role: "INTERN",
           status: "ACTIVE",
-          invite_status: "ACCEPTED",
-          password_hash: "hashed_pass",
+
+          invite_status: "PENDING",
+          invite_token: token,
+          invite_expires_at: expiresAt,
+          password_hash: "" // Placeholder, should be replaced with actual hashed password logic
         }
       };
     }
@@ -88,6 +102,25 @@ class GraphQLService {
       mutation: Mutations.INSERT_INTERN,
       variables: { object: internData },
     });
+    
+    if (formData.full_name && formData.email) {
+      const first_name = formData.full_name.split(' ')[0];
+
+      try {
+        await fetch('/api/invite/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            firstName: first_name,
+            token: token
+          })
+        });
+      } catch (err) {
+        console.error("Failed to trigger invite email", err);
+      }
+    }
+
     return data;
   }
 

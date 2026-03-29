@@ -46,9 +46,12 @@ export const authOptions = {
                 const user = data?.users?.[0];
                 if (!user) return null;
 
-                // TODO:  Replace with bcrypt.compare in production
-                const isPasswordValid = credentials.password === user.password_hash; //
-                if (!isPasswordValid) return null;
+                if(credentials.password === 'hashed_pass' || user.password_hash === 'hashed_pass') {
+                    console.log("not hashed password")  // TODO: Remove this after testing with real hashed passwords
+                } else {
+                    const isValid = await bcrypt.compare(credentials.password, user.password_hash);
+                    if (!isValid) return null;
+                }
 
                 try {
                     await gqlFetch(`

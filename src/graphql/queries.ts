@@ -229,3 +229,13 @@ export const GET_ALL_DEPARTMENTS = gql`
     }
   }
 `;
+
+export const GET_USER_BY_TOKEN = gql`
+  query GetUserByToken($token: String!) {
+    users(where: { invite_token: { _eq: $token } }) {
+      id
+      invite_status
+      invite_expires_at
+    }
+  }
+`;
