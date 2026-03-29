@@ -7,6 +7,7 @@ import {
   LayoutDashboard, 
   Users, 
   UserPlus, 
+  Bot,
   ShieldCheck, 
   Settings, 
   LogOut,
@@ -35,11 +36,13 @@ const menuConfigs: Record<UserRole, MenuItem[]> = {
   DEPT_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
     { icon: Users, label: "All Interns", href: "/admin/reports" },
+    { icon: Bot, label: "Chatbot", href: "/admin/chatbot" },
   ],
   SUPER_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/super-admin/dashboard" },
     { icon: Building2, label: "Organizations", href: "/super-admin/organizations" },
     { icon: Users, label: "All Interns", href: "/super-admin/reports" },
+    { icon: Bot, label: "Chatbot", href: "/super-admin/chatbot" },
     { icon: UserPlus, label: "Add Intern", href: "/super-admin/create-intern" },
   ],
 };

@@ -107,6 +107,123 @@
   border-radius: 10px;
 }
 
+@layer components {
+.glass-card {
+background: var(--glass-bg);
+backdrop-filter: var(--glass-blur);
+border: 1.5px solid var(--glass-border);
+box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+position: relative;
+overflow: hidden;
+}
+
+.glass-card-hover {
+background: var(--glass-bg-hover, var(--glass-bg));
+backdrop-filter: var(--glass-blur);
+border: 1.5px solid var(--glass-border-hover, var(--glass-border));
+box-shadow: 0 24px 48px rgba(0, 0, 0, 0.14);
+position: relative;
+overflow: hidden;
+transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card-hover:hover {
+transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+from {
+opacity: 0;
+transform: translateY(10px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+@keyframes slideInFromBottom {
+from {
+opacity: 0;
+transform: translateY(20px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+@keyframes slideInFromRight {
+from {
+opacity: 0;
+transform: translateX(20px);
+}
+to {
+opacity: 1;
+transform: translateX(0);
+}
+}
+
+@keyframes pulse-subtle {
+0%,
+100% {
+opacity: 1;
+}
+50% {
+opacity: 0.7;
+}
+}
+
+.animate-fade-in {
+animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-slide-in-bottom {
+animation: slideInFromBottom 0.4s ease forwards;
+}
+
+.animate-slide-in-right {
+animation: slideInFromRight 0.3s ease forwards;
+}
+
+.animate-pulse-subtle {
+animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-in {
+animation: fadeIn 0.3s ease-out forwards;
+}
+
+.line-clamp-1 {
+display: -webkit-box;
+-webkit-line-clamp: 1;
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+display: none;
+}
+
+.scrollbar-hide {
+-ms-overflow-style: none;
+scrollbar-width: none;
+}
+
+.scroll-smooth {
+scroll-behavior: smooth;
+}
+
+.text-gradient {
+background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+}
+
+
+
 @layer base {
   * {
     border-color: var(--border);
@@ -148,6 +265,8 @@
     position: relative;
     overflow: hidden;
   }
+
+  
 
   /* Top-light highlight effect for borders */
   .glass-card::before {
