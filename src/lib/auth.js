@@ -46,9 +46,21 @@ export const authOptions = {
                 const user = data?.users?.[0];
                 if (!user) return null;
 
-                // TODO:  Replace with bcrypt.compare in production
-                const isPasswordValid = credentials.password === user.password_hash; //
-                if (!isPasswordValid) return null;
+                let isValid = false;
+
+                // check if password is hashed
+                const isHashed = user.password_hash.startsWith("$2b$");
+
+                if (isHashed) {
+                    // 🔐 hashed password
+                    isValid = await bcrypt.compare(credentials.password, user.password_hash);
+                } else {
+                    // ⚠️ plain text password
+                    isValid = credentials.password === user.password_hash;
+
+                }
+
+                if (!isValid) return null;
 
                 try {
                     await gqlFetch(`
@@ -78,10 +90,10 @@ export const authOptions = {
     jwt: {
         async encode({ token, secret: nextAuthSecret }) {
             if (!token) return "";
-            
+
             // Re-encode secret just in case NextAuth passes a different one
             const key = new TextEncoder().encode(nextAuthSecret || process.env.NEXTAUTH_SECRET);
-            
+
             return await new SignJWT({
                 ...token,
                 "https://hasura.io/jwt/claims": {
