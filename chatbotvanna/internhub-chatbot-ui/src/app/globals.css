@@ -1,0 +1,219 @@
+/* ============================================================ */
+/* Global Chatbot UI Styles */
+/* ============================================================ */
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* ────────────────────────────────────────────────────────── */
+/* Theme Variables */
+/* ────────────────────────────────────────────────────────── */
+
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --accent: #8b5cf6;
+  --success: #10b981;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #2d3e50;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Global Base Styles */
+/* ────────────────────────────────────────────────────────── */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+* {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Glassmorphism Component */
+/* ────────────────────────────────────────────────────────── */
+
+@layer components {
+  .glass-card {
+    @apply bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:bg-slate-800/50 hover:border-slate-600/50 transition-all;
+  }
+
+  /* ────────────────────────────────────────────────────────── */
+  /* Animations */
+  /* ────────────────────────────────────────────────────────── */
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse-subtle {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+
+  .animate-slide-in-bottom {
+    animation: slideInFromBottom 0.4s ease forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInFromRight 0.3s ease forwards;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Remove Tailwind's default animate-in behavior and add custom */
+  .animate-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  /* ────────────────────────────────────────────────────────── */
+  /* Utility Classes */
+  /* ────────────────────────────────────────────────────────── */
+
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Scrollbar Styling */
+/* ────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Focus Styles for Accessibility */
+/* ────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950;
+  }
+
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset;
+  }
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Responsive Breakpoint Overrides */
+/* ────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  /* On tablets and smaller, context panel moves below */
+  .lg\:hidden {
+    display: block !important;
+  }
+
+  .lg\:flex {
+    display: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Print Styles */
+/* ────────────────────────────────────────────────────────── */
+
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .no-print {
+    display: none;
+  }
+}

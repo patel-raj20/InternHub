@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InternHub Widget Test</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Segoe UI, Arial, sans-serif;
+      color: #e2e8f0;
+      background: radial-gradient(circle at 20% 10%, #172554 0%, #020617 55%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .page-card {
+      width: 100%;
+      max-width: 920px;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 24px;
+    }
+
+    .page-card h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      color: #a5b4fc;
+    }
+
+    .page-card p {
+      margin: 0;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .ihw-btn {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 2147483646;
+      width: 58px;
+      height: 58px;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      background: #16a34a;
+      color: #ffffff;
+      font-size: 24px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .ihw-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483645;
+      background: rgba(2, 6, 23, 0.55);
+      display: none;
+    }
+
+    .ihw-panel {
+      position: fixed;
+      right: 22px;
+      bottom: 92px;
+      z-index: 2147483646;
+      width: min(94vw, 430px);
+      height: min(78vh, 640px);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0f172a;
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
+      display: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ihw-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #0b1225;
+    }
+
+    .ihw-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #c7d2fe;
+    }
+
+    .ihw-status {
+      font-size: 12px;
+      color: #93c5fd;
+    }
+
+    .ihw-close {
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .ihw-messages {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ihw-msg {
+      max-width: 88%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .ihw-user {
+      align-self: flex-end;
+      background: #1d4ed8;
+      color: #eff6ff;
+    }
+
+    .ihw-bot {
+      align-self: flex-start;
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+
+    .ihw-meta {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .ihw-input {
+      border-top: 1px solid #1e293b;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      background: #0b1225;
+    }
+
+    .ihw-input input {
+      flex: 1;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .ihw-input button {
+      border: 0;
+      background: #16a34a;
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .ihw-panel {
+        right: 10px;
+        left: 10px;
+        bottom: 82px;
+        width: auto;
+        height: 72vh;
+      }
+      .ihw-btn {
+        right: 14px;
+        bottom: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-card">
+    <h1>InternHub AI Widget</h1>
+    <p>This page is a drop-in test harness for the embeddable chatbot widget.</p>
+  </div>
+
+  <script>
+    (function () {
+      const CONFIG = {
+        apiBase: "http://127.0.0.1:8000/api/v0",
+        title: "InternHub Data Assistant"
+      };
+
+      if (window.location.protocol === "file:") {
+        const warning = document.createElement("div");
+        warning.style.position = "fixed";
+        warning.style.left = "16px";
+        warning.style.right = "16px";
+        warning.style.bottom = "16px";
+        warning.style.padding = "12px";
+        warning.style.borderRadius = "10px";
+        warning.style.background = "#7f1d1d";
+        warning.style.color = "#fecaca";
+        warning.style.fontFamily = "Segoe UI, Arial, sans-serif";
+        warning.textContent = "Open this via http://localhost:3000/chatbot_embed.html. file:// can break embedded widgets.";
+        document.body.appendChild(warning);
+      }
+
+      const btn = document.createElement("button");
+      btn.className = "ihw-btn";
+      btn.setAttribute("aria-label", "Open assistant");
+      btn.textContent = "?";
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "ihw-backdrop";
+
+      const panel = document.createElement("div");
+      panel.className = "ihw-panel";
+
+      const header = document.createElement("div");
+      header.className = "ihw-header";
+
+      const title = document.createElement("div");
+      title.className = "ihw-title";
+      title.textContent = CONFIG.title;
+
+      const status = document.createElement("div");
+      status.className = "ihw-status";
+      status.textContent = "checking API...";
+
+      const close = document.createElement("button");
+      close.className = "ihw-close";
+      close.setAttribute("aria-label", "Close assistant");
+      close.textContent = "x";
+
+      const leftHeader = document.createElement("div");
+      leftHeader.appendChild(title);
+      leftHeader.appendChild(status);
+
+      header.appendChild(leftHeader);
+      header.appendChild(close);
+
+      const messages = document.createElement("div");
+      messages.className = "ihw-messages";
+
+      const inputWrap = document.createElement("div");
+      inputWrap.className = "ihw-input";
+
+      const input = document.createElement("input");
+      input.placeholder = "Ask about departments, users, interns...";
+
+      const send = document.createElement("button");
+      send.textContent = "Send";
+
+      inputWrap.appendChild(input);
+      inputWrap.appendChild(send);
+
+      panel.appendChild(header);
+      panel.appendChild(messages);
+      panel.appendChild(inputWrap);
+      document.body.appendChild(backdrop);
+      document.body.appendChild(panel);
+      document.body.appendChild(btn);
+
+      function addMessage(text, kind, meta) {
+        const box = document.createElement("div");
+        box.className = "ihw-msg " + (kind === "user" ? "ihw-user" : "ihw-bot");
+        box.textContent = text;
+
+        if (meta) {
+          const m = document.createElement("div");
+          m.className = "ihw-meta";
+          m.textContent = meta;
+          box.appendChild(m);
+        }
+
+        messages.appendChild(box);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      async function checkHealth() {
+        try {
+          const res = await fetch(CONFIG.apiBase.replace("/api/v0", "") + "/health");
+          const data = await res.json();
+          if (data.status === "ok") {
+            status.textContent = "API connected";
+          } else {
+            status.textContent = "API degraded";
+          }
+        } catch (err) {
+          status.textContent = "API unavailable";
+        }
+      }
+
+      async function ask() {
+        const question = input.value.trim();
+        if (!question) return;
+
+        addMessage(question, "user");
+        input.value = "";
+        send.disabled = true;
+
+        try {
+          const res = await fetch(CONFIG.apiBase + "/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: question })
+          });
+
+          if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+          }
+
+          const data = await res.json();
+          const count = Array.isArray(data.results) ? data.results.length : 0;
+          const sql = data.sql ? "SQL: " + data.sql : "No SQL returned";
+          addMessage("Returned " + count + " rows", "bot", sql);
+        } catch (err) {
+          addMessage("Request failed. Check API/CORS and backend logs.", "bot", String(err));
+        } finally {
+          send.disabled = false;
+        }
+      }
+
+      function openWidget() {
+        backdrop.style.display = "block";
+        panel.style.display = "flex";
+        input.focus();
+      }
+
+      function closeWidget() {
+        backdrop.style.display = "none";
+        panel.style.display = "none";
+      }
+
+      btn.addEventListener("click", openWidget);
+      close.addEventListener("click", closeWidget);
+      backdrop.addEventListener("click", closeWidget);
+      send.addEventListener("click", ask);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          ask();
+        }
+      });
+
+      addMessage("Hello. Ask a question about your data.", "bot");
+      checkHealth();
+    })();
+  </script>
+</body>
+</html>

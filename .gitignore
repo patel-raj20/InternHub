@@ -41,4 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 
-.env
+.envchatbotvanna/.venv/
+chatbotvanna/chroma_db/
+chatbotvanna/__pycache__/
+chatbotvanna/.env
+chatbotvanna/**/node_modules/
