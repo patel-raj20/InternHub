@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import { graphqlService } from "@/lib/services/graphql-service";
 import { Organization, Department, Intern } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Database, LayoutDashboard, Plus, Building2, Globe, ArrowLeft, Users, TrendingUp, GraduationCap } from "lucide-react";
+import { Database, LayoutDashboard, Plus, Building2, Globe, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { DepartmentList } from "@/components/departments/department-list";
 import { DepartmentFormModal } from "@/components/departments/department-form-modal";
@@ -13,11 +13,18 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { OrganizationStats } from "@/components/organizations/organization-stats";
+import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import { RootState } from "@/store";
 
 
 export default function OrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const { id } = resolvedParams;
+  const router = useRouter();
+  const user = useSelector((state: RootState) => state.user);
+  const isDev = user.role === "DEVELOPER";
+
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [allInterns, setAllInterns] = useState<Intern[]>([]);
@@ -45,8 +52,14 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
   };
 
   useEffect(() => {
+    // Security Guard: Prevent unauthorized organizational traversal
+    if (!isDev && user.role === "SUPER_ADMIN" && user.organization_id && user.organization_id !== id) {
+      router.push(`/super-admin/organizations/${user.organization_id}`);
+      toast.error("Access restricted: Redirecting to your assigned organization.");
+      return;
+    }
     fetchData();
-  }, [id]);
+  }, [id, user.organization_id, user.role, isDev, router]);
 
   const handleAddDept = async (data: any) => {
     try {
@@ -102,12 +115,12 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
   const handleExportPDF = async () => {
     const loadingToast = toast.loading("Generating PDF report...");
     try {
-      const { default: jsPDF } = await import("jspdf");
+      const jsPDFModule = await import("jspdf");
+      const jsPDF = (jsPDFModule as any).default || jsPDFModule;
       await import("jspdf-autotable");
-      // Use Landscape orientation for more data columns
+      
       const doc = new jsPDF({ orientation: 'l' }) as any;
       
-      // Document Title Header
       doc.setFontSize(24);
       doc.setTextColor(0, 0, 0);
       doc.setFont("helvetica", "bold");
@@ -119,7 +132,6 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       doc.text(`Organization: ${organization?.name}`, 14, 32);
       doc.text(`Website: ${organization?.website || 'N/A'}`, 14, 40);
       
-      // Decorative line
       doc.setDrawColor(0, 122, 255);
       doc.setLineWidth(1);
       doc.line(14, 46, 280, 46);
@@ -129,12 +141,11 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
       for (const dept of departments) {
         const interns = await graphqlService.getInterns(id, dept.id);
         
-        if (yPos > 180) { // More conservative for landscape
+        if (yPos > 180) {
           doc.addPage();
           yPos = 20;
         }
 
-        // Department Section Header
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(0, 122, 255);
@@ -149,7 +160,8 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
           `${intern.address || ""}\n${intern.city || ""}, ${intern.country || ""}\n${intern.github_url || ""}`
         ]);
 
-        const { default: autoTable } = await import("jspdf-autotable");
+        const autotableModule = await import("jspdf-autotable");
+        const autoTable = (autotableModule as any).default || autotableModule;
         autoTable(doc, {
           startY: yPos,
           head: [['Intern / Contact', 'Academic Info', 'Specialization & Skills', 'Duration', 'Location & Links']],
@@ -172,7 +184,6 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
           margin: { left: 14, right: 14 }
         });
 
-        // Update yPos for next department
         yPos = (doc as any).lastAutoTable.finalY + 20;
       }
 
@@ -217,13 +228,15 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
           </div>
 
           <div className="flex gap-3 relative">
-            <Button 
-                variant="outline" 
-                onClick={() => setIsOrgModalOpen(true)}
-                className="rounded-xl border-border/50 hover:bg-muted font-bold uppercase tracking-widest text-[10px]"
-            >
-                Edit Profile
-            </Button>
+            {!isDev && (
+              <Button 
+                  variant="outline" 
+                  onClick={() => setIsOrgModalOpen(true)}
+                  className="rounded-xl border-border/50 hover:bg-muted font-bold uppercase tracking-widest text-[10px]"
+              >
+                  Edit Profile
+              </Button>
+            )}
             <Button 
               onClick={handleExportPDF}
               className="rounded-xl bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] neon-glow"
@@ -259,18 +272,21 @@ export default function OrganizationDetailPage({ params }: { params: Promise<{ i
 
         {activeTab === "departments" ? (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center px-4">
               <div>
-                <h2 className="text-xl font-bold tracking-tight">Departmental Structure</h2>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">Management of operational units within the organization</p>
+                <h2 className="text-xl font-black tracking-tight uppercase">Departmental Structure</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">Management of operational units within the organization</p>
               </div>
-              <Button onClick={() => { setEditingDept(null); setIsModalOpen(true); }} className="gap-2 rounded-xl font-black uppercase tracking-widest text-[11px] h-11 px-6 shadow-lg shadow-primary/20 neon-glow">
-                <Plus size={18} /> Add Department
-              </Button>
+              {!isDev && (
+                <Button onClick={() => { setEditingDept(null); setIsModalOpen(true); }} className="gap-2 rounded-xl font-black uppercase tracking-widest text-[10px] h-11 px-6 shadow-lg shadow-primary/20 neon-glow">
+                  <Plus size={18} /> Add Department
+                </Button>
+              )}
             </div>
 
             <DepartmentList 
               departments={departments} 
+              isReadOnly={isDev}
               onEdit={(dept) => {
                 setEditingDept(dept);
                 setIsModalOpen(true);

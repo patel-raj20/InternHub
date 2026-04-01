@@ -15,11 +15,12 @@ export const GET_ORGANIZATIONS = gql`
 `;
 
 export const GET_DEPARTMENTS = gql`
-  query GetDepartments($organization_id: uuid!) {
-    departments(where: { organization_id: { _eq: $organization_id } }) {
+  query GetDepartments($where: departments_bool_exp) {
+    departments(where: $where) {
       id
       name
       description
+      organization_id
       created_at
       users(where: { role: { _eq: "DEPT_ADMIN" } }) {
         id
@@ -42,6 +43,10 @@ export const GET_INTERNS = gql`
       id
       user_id
       organization_id
+      organization {
+        id
+        name
+      }
       college_name
       degree
       specialization
@@ -57,9 +62,30 @@ export const GET_INTERNS = gql`
       city
       state
       country
+      dob
+      blood_group
+      enrollment_number
       joining_date
       end_date
       created_at
+      streak
+      longest_streak
+      longest_streak_start
+      longest_streak_end
+      total_points
+      last_attendance
+      task_streak
+      longest_task_streak
+      last_task_date
+      intern_badges {
+        earned_at
+        badge {
+          id
+          name
+          icon
+          description
+        }
+      }
       user {
         id
         first_name
@@ -84,6 +110,10 @@ export const GET_INTERN_BY_ID = gql`
       id
       user_id
       organization_id
+      organization {
+        id
+        name
+      }
       college_name
       degree
       specialization
@@ -99,9 +129,31 @@ export const GET_INTERN_BY_ID = gql`
       city
       state
       country
+      dob
+      blood_group
+      enrollment_number
       joining_date
       end_date
       created_at
+      streak
+      longest_streak
+      longest_streak_start
+      longest_streak_end
+      total_points
+      last_attendance
+      task_streak
+      longest_task_streak
+      last_task_date
+      intern_badges {
+        earned_at
+        badge {
+          id
+          name
+          icon
+          description
+        }
+      }
+
       user {
         id
         first_name
@@ -146,6 +198,10 @@ export const GET_INTERN_BY_USER_ID = gql`
       id
       user_id
       organization_id
+      organization {
+        id
+        name
+      }
       college_name
       degree
       specialization
@@ -161,9 +217,31 @@ export const GET_INTERN_BY_USER_ID = gql`
       city
       state
       country
+      dob
+      blood_group
+      enrollment_number
       joining_date
       end_date
       created_at
+      streak
+      longest_streak
+      longest_streak_start
+      longest_streak_end
+      total_points
+      last_attendance
+      task_streak
+      longest_task_streak
+      last_task_date
+      intern_badges {
+        earned_at
+        badge {
+          id
+          name
+          icon
+          description
+        }
+      }
+
       user {
         id
         first_name
@@ -217,6 +295,7 @@ export const GET_ALL_DEPARTMENTS = gql`
     departments {
       id
       name
+      organization_id
       organization {
         id
         name
@@ -236,6 +315,162 @@ export const GET_USER_BY_TOKEN = gql`
       id
       invite_status
       invite_expires_at
+    }
+  }
+`;
+export const GET_USER_BY_EMAIL = gql`
+  query GetUserByEmail($email: String!) {
+    users(where: { email: { _eq: $email } }) {
+      id
+      first_name
+      last_name
+      email
+      role
+      organization_id
+      department_id
+    }
+  }
+`;
+
+export const GET_ATTENDANCE_SETTINGS = gql`
+  query GetAttendanceSettings($department_id: uuid!) {
+    attendance_settings(where: { department_id: { _eq: $department_id } }) {
+      id
+      department_id
+      office_lat
+      office_lng
+      allowed_radius_meters
+      work_start_time
+      late_threshold_minutes
+    }
+  }
+`;
+
+export const GET_INTERN_ATTENDANCE = gql`
+  query GetInternAttendance($intern_id: uuid!) {
+    attendance_records(where: { intern_id: { _eq: $intern_id } }, order_by: { date: desc }) {
+      id
+      date
+      check_in_time
+      status
+      distance_meters
+    }
+  }
+`;
+
+export const GET_DAILY_ATTENDANCE_REPORT = gql`
+  query GetDailyAttendanceReport($department_id: uuid!, $date: date!) {
+    attendance_records(
+      where: { 
+        intern: { user: { department_id: { _eq: $department_id } } },
+        date: { _eq: $date }
+      }
+    ) {
+      id
+      intern_id
+      intern {
+        user {
+          first_name
+          last_name
+          email
+        }
+      }
+      check_in_time
+      status
+      distance_meters
+    }
+  }
+`;
+
+export const GET_TASKS = gql`
+  query GetTasks($intern_id: uuid!) {
+    tasks(where: { intern_id: { _eq: $intern_id } }, order_by: { deadline: asc }) {
+      id
+      title
+      description
+      status
+      category
+      difficulty
+      points_reward
+      deadline
+      completed_at
+      created_at
+    }
+  }
+`;
+
+export const GET_TASK_BY_ID = gql`
+  query GetTaskById($id: uuid!) {
+    tasks_by_pk(id: $id) {
+      id
+      intern_id
+      title
+      description
+      status
+      category
+      difficulty
+      points_reward
+      deadline
+      completed_at
+    }
+  }
+`;
+
+export const GET_LEADERBOARD = gql`
+  query GetLeaderboard($limit: Int = 10, $where: interns_bool_exp) {
+    interns(
+      limit: $limit,
+      order_by: { total_points: desc },
+      where: $where
+    ) {
+      id
+      total_points
+      task_streak
+      user {
+        first_name
+        last_name
+        department {
+          name
+        }
+      }
+      intern_badges {
+        badge {
+          icon
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ALL_TASKS = gql`
+  query GetAllTasks($where: tasks_bool_exp) {
+    tasks(where: $where, order_by: { created_at: desc }) {
+      id
+      title
+      description
+      status
+      category
+      difficulty
+      points_reward
+      deadline
+      completed_at
+      created_at
+      intern_id
+      intern {
+        id
+        user {
+          id
+          first_name
+          last_name
+          email
+          department_id
+          department {
+            id
+            name
+          }
+        }
+      }
     }
   }
 `;

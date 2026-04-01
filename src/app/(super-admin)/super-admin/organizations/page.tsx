@@ -11,7 +11,11 @@ import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+
 export default function OrganizationsListPage() {
+  const { role } = useSelector((state: RootState) => state.user);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -51,15 +55,24 @@ export default function OrganizationsListPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Organizations</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Register and manage partner companies in the platform.</p>
+    <div className="max-w-7xl mx-auto py-10 px-6 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--primary)]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/80">Ecosystem Management</span>
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black tracking-tighter leading-none uppercase">
+            Partner Network
+          </h1>
+          <p className="text-muted-foreground font-medium text-sm lg:text-base max-w-xl">
+             Comprehensive directory of organizational nodes integrated into the InternHub ecosystem.
+          </p>
         </div>
+        
         <Link href="/super-admin/organizations/create">
-          <Button className="gap-2 shadow-lg shadow-primary/20 neon-glow h-11 px-6 rounded-xl font-black uppercase tracking-widest text-[10px]">
-            <Plus size={18} /> Add Organization
+          <Button className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 neon-glow transition-all hover:scale-105 active:scale-95">
+            <Plus size={16} className="mr-2" /> Add New Organization
           </Button>
         </Link>
       </div>
@@ -69,10 +82,20 @@ export default function OrganizationsListPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {organizations.map((org) => (
-            <OrganizationCard key={org.id} org={org} onDelete={() => setTargetId(org.id)} />
+            <OrganizationCard 
+              key={org.id} 
+              org={org} 
+              onDelete={() => setTargetId(org.id)} 
+              isReadOnly={role === 'DEVELOPER'}
+            />
           ))}
+          {organizations.length === 0 && (
+             <div className="col-span-full py-24 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No partner nodes detected in registry</p>
+             </div>
+          )}
         </div>
       )}
 

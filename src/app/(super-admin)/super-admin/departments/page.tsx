@@ -62,8 +62,8 @@ export default function DepartmentsPage() {
     <div className="container mx-auto py-8 px-4 max-w-5xl">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Manage Departments</h1>
-          <p className="text-muted-foreground mt-1">Configure the organizational units for interns.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase tracking-tight">Organization Departments</h1>
+          <p className="text-muted-foreground mt-1 text-[11px] font-bold uppercase tracking-widest opacity-60">Configuring metrics and hierarchy for your organizational units.</p>
         </div>
         <Link href="/super-admin/departments/create">
           <Button className="gap-2 h-11 px-6 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg neon-glow scale-105 hover:scale-110 active:scale-95 transition-all">

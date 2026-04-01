@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  AreaChart, Area 
+  AreaChart, Area, ResponsiveContainer 
 } from 'recharts';
 import { 
   Building2, LayoutGrid, Users, Activity, Search, 
@@ -53,11 +52,16 @@ const CountUp = ({ value, duration = 0.8 }: { value: number, duration?: number }
 
 // --- Main Dashboard Component ---
 
+import { useSelector } from 'react-redux';
+import { RootState } from "@/store";
+
 export default function SuperAdminDashboard() {
+  const { role, organization_id } = useSelector((state: RootState) => state.user);
+  
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [interns, setInterns] = useState<Intern[]>([]);
-  const [stats, setStats] = useState({ organizations: 0, departments: 0, interns: 0, activeInterns: 0 });
+  const [stats, setStats] = useState({ organizations: 0, departments: 0, interns: 0, activeInterns: 0, completedInterns: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,16 +71,38 @@ export default function SuperAdminDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [orgs, depts, ints, globalStats] = await Promise.all([
-          graphqlService.getOrganizations(),
-          graphqlService.getAllDepartments(),
-          graphqlService.getInterns(undefined), // Fixed: pass undefined instead of "" to avoid UUID error
-          graphqlService.getGlobalStats()
-        ]);
-        setOrganizations(orgs);
-        setDepartments(depts);
-        setInterns(ints);
-        setStats(globalStats);
+        if (role === "DEVELOPER") {
+          const [orgs, depts, ints, globalStats] = await Promise.all([
+            graphqlService.getOrganizations(),
+            graphqlService.getAllDepartments(),
+            graphqlService.getInterns(undefined),
+            graphqlService.getGlobalStats()
+          ]);
+          setOrganizations(orgs);
+          setDepartments(depts);
+          setInterns(ints);
+          setStats({
+            ...globalStats,
+            completedInterns: ints.filter(i => (i as any).user?.status === 'COMPLETED').length
+          });
+        } else if (role === "SUPER_ADMIN" && organization_id) {
+          const [org, depts, ints] = await Promise.all([
+            graphqlService.getOrganizationById(organization_id),
+            graphqlService.getDepartments(organization_id),
+            graphqlService.getInterns(organization_id)
+          ]);
+          setOrganizations([org]);
+          setDepartments(depts);
+          setInterns(ints);
+          // Calculate stats for Super Admin
+          setStats({
+            organizations: 1,
+            departments: depts.length,
+            interns: ints.length,
+            activeInterns: ints.filter(i => (i as any).user?.status === 'ACTIVE').length,
+            completedInterns: ints.filter(i => (i as any).user?.status === 'COMPLETED').length
+          });
+        }
       } catch (error) {
         console.error("Dashboard data fetch error:", error);
         toast.error("Failed to load real-time analytics");
@@ -84,8 +110,8 @@ export default function SuperAdminDashboard() {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (role) fetchData();
+  }, [role, organization_id]);
 
   // Filtered Table Data
   const filteredOrgs = useMemo(() => {
@@ -98,64 +124,98 @@ export default function SuperAdminDashboard() {
   const totalPages = Math.ceil(filteredOrgs.length / rowsPerPage);
   const paginatedOrgs = filteredOrgs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  // Derived Chart Data: Infrastructure
-  const infraData = useMemo(() => {
-    const orgMap: Record<string, { name: string, departments: number, interns: number }> = {};
-    
-    departments.forEach(dept => {
-        const orgId = (dept as any).organization?.id;
-        const orgName = (dept as any).organization?.name || "Unknown";
-        if (!orgMap[orgId]) {
-            orgMap[orgId] = { name: orgName, departments: 0, interns: 0 };
-        }
-        orgMap[orgId].departments += 1;
-        orgMap[orgId].interns += dept.intern_count || 0;
+  const isDev = role === "DEVELOPER";
+  const orgName = organizations[0]?.name || "Your Organization";
+
+  // Derived Activity Feed - Merged with all telemetry streams
+  const recentActivities = useMemo(() => {
+    const events: { text: string; time: Date; color: string; type: string }[] = [];
+
+    // 1. Intern Joinings
+    interns.forEach(intern => {
+      events.push({
+        text: `${intern.user?.first_name} ${intern.user?.last_name?.[0] || ""}. enrolled in ${intern.user?.department?.name || "a department"}`,
+        time: new Date(intern.created_at || intern.joining_date),
+        color: '#10B981', // Emerald for growth
+        type: 'INTERN'
+      });
     });
 
-    return Object.values(orgMap)
-        .sort((a, b) => b.interns - a.interns)
-        .slice(0, 5);
-  }, [departments]);
+    // 2. Department Creations
+    departments.forEach(dept => {
+      events.push({
+        text: `New Department "${dept.name}" was successfully deployed`,
+        time: new Date(dept.created_at),
+        color: '#7C3AED', // Purple for infra
+        type: 'DEPT'
+      });
+    });
 
-  // Derived Activity Feed
-  const recentActivities = useMemo(() => {
-    return interns
-        .slice(0, 6)
-        .map(intern => ({
-            text: `${intern.user?.first_name} ${intern.user?.last_name?.[0]}. joined ${intern.user?.department?.name || 'a department'}`,
-            time: new Date(intern.created_at || intern.joining_date).toLocaleDateString(),
-            color: 'var(--primary)'
+    // 3. Organization Creations (Global View only)
+    if (isDev) {
+      organizations.forEach(org => {
+        events.push({
+          text: `Partner "${org.name}" joined the global ecosystem`,
+          time: new Date(org.created_at),
+          color: 'var(--primary)', // Blue for partner
+          type: 'ORG'
+        });
+      });
+    }
+
+    return events
+        .sort((a, b) => b.time.getTime() - a.time.getTime())
+        .slice(0, 10) // Show top 10 live events
+        .map(event => ({
+            ...event,
+            timeLabel: event.time.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         }));
-  }, [interns]);
+  }, [interns, departments, organizations, isDev]);
 
   const kpiConfig = [
-    { label: 'Total Organizations', value: stats.organizations, icon: Building2, color: 'var(--primary)' },
     { label: 'Total Departments', value: stats.departments, icon: LayoutGrid, color: '#7C3AED' },
     { label: 'Total Interns', value: stats.interns, icon: Users, color: '#10B981' },
     { label: 'Active Interns', value: stats.activeInterns, icon: Activity, color: '#F59E0B' },
+    { label: 'Completed Interns', value: stats.completedInterns, icon: TrendingUp, color: '#00D4FF' },
   ];
 
   if (isLoading && stats.organizations === 0) {
     return (
         <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary shadow-[0_0_20px_rgba(0,122,255,0.3)]"></div>
         </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-6 space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto py-10 px-6 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
        
        {/* Header Section */}
-       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-1">
+       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-4">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-primary neon-glow" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">Global System Overview</span>
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--primary)]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/80">
+                {isDev ? "Global Core Systems" : "Departmental Overview"}
+              </span>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter leading-none">Super Admin Dashboard</h1>
-            <p className="text-muted-foreground font-medium">Monitoring global growth and infrastructure metrics.</p>
+            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter leading-none uppercase">
+              {isDev ? "System Infrastructure" : `${orgName}`}
+            </h1>
+            <p className="text-muted-foreground font-medium text-sm lg:text-base max-w-xl">
+              {isDev 
+                ? "Monitoring global ecosystem growth and partner performance metrics." 
+                : "Real-time control center for organization departments and intern operations."}
+            </p>
           </div>
+          
+          {isDev && (
+            <Link href="/super-admin/organizations/create">
+              <Button className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg neon-glow scale-105 hover:scale-110 active:scale-95 transition-all">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Organization
+              </Button>
+            </Link>
+          )}
         </div>
 
        {/* 1. TOP KPI BAR */}
@@ -183,7 +243,7 @@ export default function SuperAdminDashboard() {
        </div>
 
        {/* 2. MAIN GRID (LEFT: 65% | RIGHT: 35%) */}
-       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mt-8">
           
            {/* LEFT COLUMN (65%) */}
           <div className="lg:col-span-8 space-y-8">
@@ -191,129 +251,106 @@ export default function SuperAdminDashboard() {
              {/* A. Department Status Explorer */}
              <DepartmentStatusExplorer />
 
-             {/* B. Organization Table */}
-             <Card className="border-border/50 overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between">
-                   <div>
-                      <CardTitle className="text-xl font-black tracking-tight">Partner Organizations</CardTitle>
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Global ecosystem management</p>
-                   </div>
-                   <div className="relative w-full sm:w-64">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                      <input 
-                        type="text" 
-                        placeholder="Search organizations..."
-                        value={searchQuery}
-                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                        className="w-full bg-muted/50 border border-border/50 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-primary transition-all font-medium"
-                      />
-                   </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-muted/30 border-y border-border/50">
-                           <tr>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Org Name</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Industry</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Registered On</th>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Actions</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           {paginatedOrgs.map((org, i) => (
-                             <tr key={i} className="group border-b border-border/50 hover:bg-muted/20 transition-colors">
-                                <td className="px-6 py-4">
-                                   <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                                         <Building2 size={14} className="text-primary" />
-                                      </div>
-                                      <span className="text-sm font-bold">{org.name}</span>
-                                   </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted border border-border/50 text-muted-foreground uppercase tracking-wider text-[9px]">
-                                      {org.industry || "N/A"}
-                                   </span>
-                                </td>
-                                <td className="px-6 py-4 text-xs font-semibold text-muted-foreground">{new Date(org.created_at).toLocaleDateString()}</td>
-                                <td className="px-6 py-4 text-right">
-                                   <Link href={`/super-admin/organizations/${org.id}`}>
-                                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary hover:text-primary-foreground transition-all">
-                                         <ExternalLink size={14} />
-                                      </Button>
-                                   </Link>
-                                </td>
-                             </tr>
-                           ))}
-                           {paginatedOrgs.length === 0 && (
-                              <tr>
-                                 <td colSpan={4} className="px-8 py-20 text-center">
-                                    <p className="text-xs font-black uppercase tracking-widest opacity-20">No organizations found</p>
-                                 </td>
-                              </tr>
-                           )}
-                        </tbody>
-                     </table>
-                  </div>
-
-                  <div className="px-6 py-4 bg-muted/10 flex justify-between items-center border-t border-border/50">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                        {filteredOrgs.length > 0 ? (currentPage-1)*rowsPerPage + 1 : 0}–{Math.min(currentPage*rowsPerPage, filteredOrgs.length)} of {filteredOrgs.length}
-                     </span>
-                     <div className="flex items-center gap-2">
-                        <Button 
-                           variant="outline" size="icon" className="h-8 w-8 rounded-lg"
-                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                           disabled={currentPage === 1}
-                        >
-                           <ChevronLeft size={16} />
-                        </Button>
-                        <Button 
-                           variant="outline" size="icon" className="h-8 w-8 rounded-lg"
-                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                           disabled={currentPage === totalPages || totalPages === 0}
-                        >
-                           <ChevronRight size={16} />
-                        </Button>
+             {/* B. Organization Table (Developer Only) */}
+             {isDev && (
+               <Card className="border-border/50 overflow-hidden shadow-xl glass-card">
+                  <CardHeader className="flex flex-row items-center justify-between p-8">
+                     <div>
+                        <CardTitle className="text-xl font-black tracking-tight uppercase">Partner Organizations</CardTitle>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1 opacity-60">Global ecosystem management</p>
                      </div>
-                  </div>
-                </CardContent>
-             </Card>
+                     <div className="relative w-full sm:w-64">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                        <input 
+                          type="text" 
+                          placeholder="Search organizations..."
+                          value={searchQuery}
+                          onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                          className="w-full bg-background/50 backdrop-blur-md border border-border/50 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-primary transition-all font-medium"
+                        />
+                     </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                       <table className="w-full text-left border-collapse">
+                          <thead className="bg-muted/30 border-y border-border/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                             <tr>
+                                <th className="px-8 py-5">Org Name</th>
+                                <th className="px-6 py-5">Industry</th>
+                                <th className="px-6 py-5">Registered On</th>
+                                <th className="px-8 py-5 text-right">Actions</th>
+                             </tr>
+                          </thead>
+                          <tbody>
+                             {paginatedOrgs.map((org, i) => (
+                               <tr key={i} className="group border-b border-border/10 hover:bg-primary/[0.02] transition-colors text-[11px] font-bold">
+                                  <td className="px-8 py-4">
+                                     <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-105 transition-transform">
+                                           <Building2 size={16} className="text-primary" />
+                                        </div>
+                                        <span className="text-sm font-black tracking-tight">{org.name}</span>
+                                     </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <span className="text-[9px] font-black px-2.5 py-1 rounded-full bg-muted/50 border border-border/50 text-muted-foreground/60 uppercase tracking-widest">
+                                        {org.industry || "N/A"}
+                                     </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-xs font-mono text-muted-foreground/40 italic">{new Date(org.created_at).toLocaleDateString()}</td>
+                                  <td className="px-8 py-4 text-right">
+                                     <Link href={`/super-admin/organizations/${org.id}`}>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all border-none">
+                                           <ExternalLink size={16} />
+                                        </Button>
+                                     </Link>
+                                  </td>
+                               </tr>
+                             ))}
+                             {paginatedOrgs.length === 0 && (
+                                 <tr>
+                                    <td colSpan={4} className="px-8 py-24 text-center">
+                                       <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20">No organizations matching telemetry</p>
+                                    </td>
+                                 </tr>
+                             )}
+                          </tbody>
+                       </table>
+                    </div>
+  
+                    <div className="px-8 py-4 bg-muted/10 flex justify-between items-center border-t border-border/50">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+                          LOG: {filteredOrgs.length > 0 ? (currentPage-1)*rowsPerPage + 1 : 0} – {Math.min(currentPage*rowsPerPage, filteredOrgs.length)} OF {filteredOrgs.length} ENTRIES
+                       </span>
+                       <div className="flex items-center gap-2">
+                          <Button 
+                             variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border/50"
+                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                             disabled={currentPage === 1}
+                          >
+                             <ChevronLeft size={16} />
+                          </Button>
+                          <Button 
+                             variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border/50"
+                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                             disabled={currentPage === totalPages || totalPages === 0}
+                          >
+                             <ChevronRight size={16} />
+                          </Button>
+                       </div>
+                    </div>
+                  </CardContent>
+               </Card>
+             )}
+
 
           </div>
 
           {/* RIGHT COLUMN (35%) */}
           <div className="lg:col-span-4 space-y-8">
              
-             {/* C. Infrastructure Chart */}
-             <Card className="border-border/50">
-                <CardHeader>
-                   <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-                      <LayoutGrid className="w-5 h-5 text-primary" />
-                      Infrastructure
-                   </CardTitle>
-                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Scale per partner organization</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[240px] w-full mt-4">
-                     <ResponsiveContainer width="100%" height="100%">
-                       <BarChart data={infraData} margin={{ left: -30 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.4} />
-                          <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 8 ? `${val.slice(0, 8)}..` : val} />
-                          <YAxis yAxisId="left" orientation="left" stroke="var(--primary)" fontSize={9} fontWeight="bold" tickLine={false} axisLine={false} />
-                          <YAxis yAxisId="right" orientation="right" stroke="#7C3AED" fontSize={9} fontWeight="bold" tickLine={false} axisLine={false} />
-                          <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', fontSize: '11px' }} />
-                          <Bar yAxisId="left" dataKey="departments" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={12} name="Depts" />
-                          <Bar yAxisId="right" dataKey="interns" fill="#7C3AED" radius={[4, 4, 0, 0]} barSize={12} name="Interns" />
-                       </BarChart>
-                     </ResponsiveContainer>
-                  </div>
-                </CardContent>
-             </Card>
-
              {/* D. Recent Activity Feed */}
-             <Card className="border-border/50">
+             <Card className="border-border/50 h-full flex flex-col">
                 <CardHeader>
                    <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                       <Activity className="w-5 h-5 text-primary" />
@@ -321,22 +358,35 @@ export default function SuperAdminDashboard() {
                    </CardTitle>
                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Live platform events</p>
                 </CardHeader>
-                <CardContent>
-                  <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-                     {recentActivities.map((act, i) => (
-                       <div key={i} className="flex gap-4 group transition-all duration-300">
-                          <div className="flex flex-col items-center gap-1 mt-1.5">
-                             <div className="w-2.5 h-2.5 rounded-full bg-primary/40 shadow-sm" style={{ backgroundColor: act.color }} />
-                             {i !== recentActivities.length - 1 && <div className="w-px flex-1 bg-border/50 min-h-[40px]" />}
-                          </div>
-                          <div className="pb-4 flex-1">
-                             <p className="text-[11px] font-bold text-foreground/80 leading-relaxed group-hover:text-foreground transition-colors">
-                                {act.text}
-                             </p>
-                             <span className="text-[10px] text-muted-foreground/60 mt-1 block font-medium uppercase tracking-wider italic">{act.time}</span>
-                          </div>
-                       </div>
-                     ))}
+                <CardContent className="flex-grow">
+                  <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                      {recentActivities.map((act, i) => (
+                        <div key={i} className="flex gap-4 group transition-all duration-300">
+                           <div className="flex flex-col items-center gap-1 mt-1.5">
+                              <div 
+                                className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)] group-hover:scale-125 transition-transform" 
+                                style={{ backgroundColor: act.color, boxShadow: `0 0 8px ${act.color}40` }} 
+                              />
+                              {i !== recentActivities.length - 1 && <div className="w-px flex-1 bg-border/40 min-h-[48px]" />}
+                           </div>
+                           <div className="pb-6 flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={cn(
+                                  "text-[8px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md border",
+                                  act.type === 'INTERN' ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" :
+                                  act.type === 'DEPT' ? "bg-purple-500/5 border-purple-500/20 text-purple-500" :
+                                  "bg-primary/5 border-primary/20 text-primary"
+                                )}>
+                                  {act.type}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/50 font-bold uppercase tracking-wider">{act.timeLabel}</span>
+                              </div>
+                              <p className="text-[11px] font-bold text-foreground/80 leading-relaxed group-hover:text-foreground transition-colors pr-4">
+                                 {act.text}
+                              </p>
+                           </div>
+                        </div>
+                      ))}
                   </div>
                 </CardContent>
              </Card>

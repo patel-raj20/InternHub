@@ -1,11 +1,45 @@
+import { NextAuthOptions, DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { gqlFetch } from "./graphql-client";
+import { UserRole } from "./types";
 
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: UserRole;
+      firstName?: string;
+      lastName?: string;
+      organization_id?: string;
+      department_id?: string;
+    } & DefaultSession["user"];
+    accessToken?: string;
+  }
 
-export const authOptions = {
+  interface User {
+    id: string;
+    role: UserRole;
+    firstName?: string;
+    lastName?: string;
+    organization_id?: string;
+    department_id?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: UserRole;
+    firstName?: string;
+    lastName?: string;
+    organization_id?: string;
+    department_id?: string;
+  }
+}
+
+export const authOptions: NextAuthOptions = {
     pages: {
         signIn: "/login",
     },
@@ -16,13 +50,13 @@ export const authOptions = {
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: {},
-                password: {},
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                if (!credentials.email || !credentials.password) return null;
+                if (!credentials?.email || !credentials?.password) return null;
 
-                let data;
+                let data: any;
                 try {
                     data = await gqlFetch(`
                         query GetUser($email: String!) {
@@ -38,7 +72,7 @@ export const authOptions = {
                             }
                         }
                     `, { email: credentials.email });
-                } catch (error) {
+                } catch (error: any) {
                     console.error("❌ GQL Fetch failed (SignIn):", error.message);
                     return null;
                 }
@@ -46,18 +80,15 @@ export const authOptions = {
                 const user = data?.users?.[0];
                 if (!user) return null;
 
+                // 🔐 Improved Password Check (bcrypt supported)
                 let isValid = false;
-
-                // check if password is hashed
                 const isHashed = user.password_hash.startsWith("$2b$");
 
                 if (isHashed) {
-                    // 🔐 hashed password
                     isValid = await bcrypt.compare(credentials.password, user.password_hash);
                 } else {
-                    // ⚠️ plain text password
+                    // Fallback for legacy plain text passwords during transition
                     isValid = credentials.password === user.password_hash;
-
                 }
 
                 if (!isValid) return null;
@@ -71,7 +102,7 @@ export const authOptions = {
                             ) { id }
                         }
                     `, { id: user.id });
-                } catch (error) {
+                } catch (error: any) {
                     console.error("❌ GQL failed Update last_login_at:", error.message);
                 }
 
@@ -90,38 +121,43 @@ export const authOptions = {
     jwt: {
         async encode({ token, secret: nextAuthSecret }) {
             if (!token) return "";
+            
+            const key = new TextEncoder().encode((nextAuthSecret as string) || process.env.NEXTAUTH_SECRET);
+            
+            const claims: any = {
+                "x-hasura-user-id": token.id,
+                "x-hasura-roles": [token.role],
+                "x-hasura-default-role": token.role,
+                "x-hasura-allowed-roles": [token.role],
+            };
 
-            // Re-encode secret just in case NextAuth passes a different one
-            const key = new TextEncoder().encode(nextAuthSecret || process.env.NEXTAUTH_SECRET);
+            if (token.organization_id) {
+                claims["x-hasura-org-id"] = token.organization_id;
+            }
 
             return await new SignJWT({
                 ...token,
-                "https://hasura.io/jwt/claims": {
-                    "x-hasura-user-id": token.id,
-                    "x-hasura-roles": [token.role],
-                    "x-hasura-default-role": token.role,
-                    "x-hasura-allowed-roles": [token.role],
-                }
+                "https://hasura.io/jwt/claims": claims
             })
                 .setProtectedHeader({ alg: "HS256" })
                 .setIssuedAt()
-                .setExpirationTime("30d") // Match session duration
+                .setExpirationTime("30d")
                 .sign(key);
         },
         async decode({ token, secret: nextAuthSecret }) {
             if (!token) return null;
-            const key = new TextEncoder().encode(nextAuthSecret || process.env.NEXTAUTH_SECRET);
+            const key = new TextEncoder().encode((nextAuthSecret as string) || process.env.NEXTAUTH_SECRET);
             try {
                 const { payload } = await jwtVerify(token, key, { algorithms: ["HS256"] });
-                return payload;
-            } catch (e) {
+                return payload as any;
+            } catch (e: any) {
                 console.error("JWT Decode failed:", e.message);
                 return null;
             }
         },
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user }: { token: any, user?: any }) {
             if (user) {
                 token.id = user.id;
                 token.firstName = user.firstName;
@@ -133,7 +169,7 @@ export const authOptions = {
             }
             return token;
         },
-        async session({ session, token }) {
+        async session({ session, token }: { session: any, token: any }) {
             if (token) {
                 session.user.id = token.id;
                 session.user.firstName = token.firstName;
@@ -147,6 +183,7 @@ export const authOptions = {
         },
     },
     secret: process.env.NEXTAUTH_SECRET,
+    debug: process.env.NODE_ENV === 'development',
 };
 
 export default authOptions;

@@ -4,9 +4,12 @@ import { OrganizationForm } from "@/components/organizations/organization-form";
 import { graphqlService } from "@/lib/services/graphql-service";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
+  const { id: currentUserId } = useSelector((state: RootState) => state.user);
 
   const handleSubmit = async (data: any) => {
     try {
@@ -14,6 +17,7 @@ export default function CreateOrganizationPage() {
         ...data,
         industry: data.industry || "",
         website: data.website || "",
+        createdBy: currentUserId
       });
       toast.success("Organization created successfully");
       router.push("/super-admin/organizations");

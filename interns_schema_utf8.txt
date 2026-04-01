@@ -1,0 +1,29 @@
+﻿                                  Table "public.interns"
+     Column      |            Type             | Collation | Nullable |      Default       
+-----------------+-----------------------------+-----------+----------+--------------------
+ id              | uuid                        |           | not null | uuid_generate_v4()
+ user_id         | uuid                        |           | not null | 
+ college_name    | character varying(255)      |           |          | 
+ degree          | character varying(100)      |           |          | 
+ specialization  | character varying(100)      |           |          | 
+ graduation_year | integer                     |           |          | 
+ cgpa            | numeric(3,2)                |           |          | 
+ skills          | jsonb                       |           |          | 
+ certifications  | jsonb                       |           |          | 
+ github_url      | text                        |           |          | 
+ linkedin_url    | text                        |           |          | 
+ portfolio_url   | text                        |           |          | 
+ bio             | text                        |           |          | 
+ address         | text                        |           |          | 
+ city            | character varying(100)      |           |          | 
+ state           | character varying(100)      |           |          | 
+ country         | character varying(100)      |           |          | 
+ joining_date    | date                        |           |          | 
+ end_date        | date                        |           |          | 
+ created_at      | timestamp without time zone |           |          | CURRENT_TIMESTAMP
+Indexes:
+    "interns_pkey" PRIMARY KEY, btree (id)
+    "interns_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+Foreign-key constraints:
+    "fk_intern_user" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+

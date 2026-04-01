@@ -8,7 +8,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Loader from "@/components/Loader/page";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, LogIn, ShieldCheck, AlertCircle } from "lucide-react";
+import { Mail, Lock, LogIn, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +36,7 @@ const itemVariants = {
 export default function LoginPage() {
     const [serverError, setServerError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
     const { handleSubmit, handleBlur, handleChange, values, errors, touched } = useFormik({
@@ -151,15 +152,22 @@ export default function LoginPage() {
                                 </label>
                                 <div className="relative">
                                     <Input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         name="password"
                                         placeholder="••••••••"
                                         value={values.password}
                                         onChange={handleChange}
                                         onBlur={handleBlur}
-                                        className={`h-14 bg-muted/20 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all pl-12 font-bold tracking-tight rounded-2xl ${touched.password && errors.password ? "border-red-500/50" : ""}`}
+                                        className={`h-14 bg-muted/20 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all pl-12 pr-12 font-bold tracking-tight rounded-2xl ${touched.password && errors.password ? "border-red-500/50" : ""}`}
                                     />
                                     <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${touched.password && errors.password ? "text-red-500/40" : "text-muted-foreground/40 group-focus-within:text-primary"}`} size={20} />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
                                 </div>
                             </motion.div>
                         </div>

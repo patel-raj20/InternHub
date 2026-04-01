@@ -27,6 +27,8 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
   const [dept, setDept] = useState("ALL");
+  const [degree, setDegree] = useState("ALL");
+  const [college, setCollege] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -43,8 +45,8 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
       setIsLoading(true);
       try {
         const [internData, deptData] = await Promise.all([
-          graphqlService.getInterns(organization_id, targetDeptId),
-          graphqlService.getDepartments(organization_id)
+          graphqlService.getInterns(organization_id as string, targetDeptId || undefined),
+          graphqlService.getDepartments(organization_id as string)
         ]);
         setInterns(internData);
         setDepartments(deptData);
@@ -59,6 +61,14 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
     loadData();
   }, [organization_id, targetDeptId]);
 
+  const uniqueDegrees = useMemo(() => {
+    return Array.from(new Set(interns.map(i => i.degree).filter(Boolean))) as string[];
+  }, [interns]);
+
+  const uniqueColleges = useMemo(() => {
+    return Array.from(new Set(interns.map(i => i.college_name).filter(Boolean))) as string[];
+  }, [interns]);
+
   const filteredData = useMemo(() => {
     return interns.filter((intern) => {
       const fullName = `${intern.user.first_name} ${intern.user.last_name || ""}`.toLowerCase();
@@ -68,10 +78,12 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
       
       const matchesStatus = status === "ALL" || intern.user.status === status;
       const matchesDept = dept === "ALL" || intern.user.department_id === dept;
+      const matchesDegree = degree === "ALL" || intern.degree === degree;
+      const matchesCollege = college === "ALL" || intern.college_name === college;
       
-      return matchesSearch && matchesStatus && matchesDept;
+      return matchesSearch && matchesStatus && matchesDept && matchesDegree && matchesCollege;
     });
-  }, [interns, search, status, dept]);
+  }, [interns, search, status, dept, degree, college]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const currentData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -97,7 +109,8 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-4 rounded-xl border shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-2xl border-primary/10 shadow-xl overflow-visible relative">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[40px] -mr-16 -mt-16 pointer-events-none" />
         <SearchBar value={search} onChange={setSearch} />
         <FilterBar 
           status={status} 
@@ -105,10 +118,17 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
           department={mode === "SUPER_ADMIN" ? dept : undefined}
           onDepartmentChange={mode === "SUPER_ADMIN" ? setDept : undefined}
           departments={departments}
+          degree={degree}
+          onDegreeChange={setDegree}
+          degrees={uniqueDegrees}
+          college={college}
+          onCollegeChange={setCollege}
+          colleges={uniqueColleges}
         />
       </div>
 
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+      <div className="glass-card rounded-[2rem] border-border/50 overflow-hidden shadow-2xl relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
         <InternTable 
           data={currentData} 
           isLoading={isLoading} 

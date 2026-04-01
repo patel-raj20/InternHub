@@ -4,7 +4,7 @@ interface UserState {
   id: string | null;
   name: string | null;
   email: string | null;
-  role: "INTERN" | "DEPT_ADMIN" | "SUPER_ADMIN" | null;
+  role: "DEVELOPER" | "INTERN" | "DEPT_ADMIN" | "SUPER_ADMIN" | null;
   department_id: string | null;
   organization_id: string | null;
 }

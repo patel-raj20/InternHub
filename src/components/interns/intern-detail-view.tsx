@@ -16,7 +16,8 @@ import {
   CalendarDays,
   Hash,
   Briefcase,
-  Share2
+  Share2,
+  Trophy
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TagList } from "@/components/ui/tag-input";
 
 interface InternDetailPageProps {
   params: { id: string };
@@ -154,10 +156,15 @@ export default function InternDetailPage({ params, role }: InternDetailPageProps
                  <div className="w-10 h-10 rounded-xl bg-orange-500/5 flex items-center justify-center text-orange-500/60 border border-orange-500/10">
                    <Calendar className="w-5 h-5" />
                  </div>
-                 <div>
-                   <p className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest mb-0.5">End Date</p>
-                   <p className="text-sm font-bold">{intern.end_date ? new Date(intern.end_date).toLocaleDateString(undefined, { dateStyle: 'long' }) : "N/A"}</p>
-                 </div>
+                  <div>
+                    <p className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest mb-0.5">End Date</p>
+                    <p className={cn("text-sm font-bold", !intern.end_date && "text-emerald-500")}>
+                      {intern.end_date 
+                        ? new Date(intern.end_date).toLocaleDateString(undefined, { dateStyle: 'long' }) 
+                        : "Present"
+                      }
+                    </p>
+                  </div>
                </div>
             </div>
 
@@ -228,9 +235,10 @@ export default function InternDetailPage({ params, role }: InternDetailPageProps
              <div className="space-y-6">
                <div className="grid grid-cols-1 gap-4">
                  <InfoField label="Email Address" value={intern.user.email} />
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-3 gap-4">
                    <InfoField label="Phone" value={intern.user.phone || "N/A"} />
                    <InfoField label="Date of Birth" value={intern.dob || "N/A"} />
+                   <InfoField label="Blood Group" value={intern.blood_group || "N/A"} />
                  </div>
                </div>
                
@@ -249,8 +257,32 @@ export default function InternDetailPage({ params, role }: InternDetailPageProps
         </Card>
       </div>
 
-      {/* 5. PROFESSIONAL PRESENCE CARD */}
-      <Card className="border-border/50 shadow-sm">
+      {/* 5. SKILLS & CERTIFICATIONS CARD */}
+      <Card className="border-border/50 shadow-sm mt-6">
+        <CardContent className="p-6">
+           <div className="flex items-center gap-2 mb-6">
+             <Trophy className="w-3.5 h-3.5 text-muted-foreground/50" />
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Skills & Certifications</p>
+           </div>
+           
+           <div className="space-y-6">
+             <div className="space-y-3">
+               <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Skills</p>
+               <TagList tags={intern.skills} colorScheme="emerald" emptyText="No skills added" />
+             </div>
+             
+             <div className="h-[1px] bg-border/30 w-full" />
+             
+             <div className="space-y-3">
+               <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Certifications</p>
+               <TagList tags={intern.certifications} colorScheme="violet" emptyText="No certifications added" />
+             </div>
+           </div>
+        </CardContent>
+      </Card>
+
+      {/* 6. PROFESSIONAL PRESENCE CARD */}
+      <Card className="border-border/50 shadow-sm mt-6">
         <CardContent className="p-6">
            <div className="flex items-center gap-2 mb-6">
              <Share2 className="w-3.5 h-3.5 text-muted-foreground/50" />

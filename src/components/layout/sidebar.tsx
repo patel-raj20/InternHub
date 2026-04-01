@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,6 +13,11 @@ import {
   LogOut,
   Building2,
   FileText,
+  QrCode,
+  CalendarCheck,
+  ClipboardList,
+  LayoutGrid,
+  Activity,
   LucideIcon
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -21,7 +26,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { setRole } from "@/store/slices/userSlice";
 
-type UserRole = "INTERN" | "DEPT_ADMIN" | "SUPER_ADMIN";
+type UserRole = "INTERN" | "DEPT_ADMIN" | "SUPER_ADMIN" | "DEVELOPER";
 
 interface MenuItem {
   icon: LucideIcon;
@@ -29,30 +34,48 @@ interface MenuItem {
   href: string;
 }
 
-const menuConfigs: Record<UserRole, MenuItem[]> = {
+const menuConfigs: (orgId?: string | null) => Record<UserRole, MenuItem[]> = (orgId) => ({
   INTERN: [
     { label: "My Profile", href: "/profile", icon: LayoutDashboard },
+    { label: "Attendance", href: "/intern/attendance", icon: QrCode },
   ],
   DEPT_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
     { icon: Users, label: "All Interns", href: "/admin/reports" },
+    { icon: ClipboardList, label: "Assign Tasks", href: "/admin/tasks" },
+    { icon: LayoutGrid, label: "Monitor Tasks", href: "/admin/monitoring" },
+    { icon: CalendarCheck, label: "Attendance", href: "/admin/attendance" },
     { icon: Bot, label: "Chatbot", href: "/admin/chatbot" },
+  ],
+  DEVELOPER: [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/developer/dashboard" },
+    { icon: Building2, label: "All Organizations", href: "/super-admin/organizations" },
   ],
   SUPER_ADMIN: [
     { icon: LayoutDashboard, label: "Dashboard", href: "/super-admin/dashboard" },
-    { icon: Building2, label: "Organizations", href: "/super-admin/organizations" },
+    { 
+      icon: Building2, 
+      label: orgId ? "My Organization" : "Organizations", 
+      href: orgId ? `/super-admin/organizations/${orgId}` : "/super-admin/organizations" 
+    },
     { icon: Users, label: "All Interns", href: "/super-admin/reports" },
+    { icon: ClipboardList, label: "Assign Tasks", href: "/super-admin/tasks" },
+    { icon: LayoutGrid, label: "Monitor Tasks", href: "/super-admin/monitoring" },
     { icon: Bot, label: "Chatbot", href: "/super-admin/chatbot" },
     { icon: UserPlus, label: "Add Intern", href: "/super-admin/create-intern" },
   ],
-};
+});
 
 export function Sidebar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const { role } = useSelector((state: RootState) => state.user);
+  const { role, organization_id } = useSelector((state: RootState) => state.user);
   const isOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
   const [mounted, setMounted] = useState(false);
+
+  const menuItems = useMemo(() => {
+    return role ? menuConfigs(organization_id)[role as keyof ReturnType<typeof menuConfigs>] : [];
+  }, [role, organization_id]);
 
   useEffect(() => {
     setMounted(true);
@@ -66,7 +89,6 @@ export function Sidebar() {
     );
   }
 
-  const menuItems = role ? menuConfigs[role as keyof typeof menuConfigs] : [];
 
   return (
     <aside 

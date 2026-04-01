@@ -8,43 +8,67 @@ import {
   Building2, 
   Calendar, 
   CalendarDays, 
-  GraduationCap, 
+  GraduationCap,
   Github, 
   Linkedin, 
   Globe,
   Briefcase,
   MapPin,
-  Share2
+  Share2,
+  AlertCircle,
+  Trophy,
+  Flame
 } from "lucide-react";
 import { graphqlService } from "@/lib/services/graphql-service";
 import { WelcomeHeader } from "@/components/interns/welcome-header";
+import { StreakDisplay } from "@/components/interns/StreakDisplay";
+import { TaskStreakDisplay } from "@/components/interns/TaskStreakDisplay";
+import { BadgeGrid } from "@/components/interns/BadgeGrid";
+import { TaskBoard } from "@/components/interns/TaskBoard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { Intern } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function InternProfilePage() {
   const { id: userId } = useSelector((state: RootState) => state.user);
   const [intern, setIntern] = useState<Intern | null>(null);
+  const [streakStatus, setStreakStatus] = useState<any>(null);
+  const [taskStreakStatus, setTaskStreakStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!userId) return;
+  const fetchProfileData = async () => {
+    if (!userId) return;
+    
+    setIsLoading(true);
+    try {
+      const [profileData, streakData, taskData] = await Promise.all([
+        graphqlService.getInternByUserId(userId),
+        fetch("/api/streak/status").then(res => res.json()),
+        fetch("/api/streak/task-status").then(res => res.json())
+      ]);
       
-      setIsLoading(true);
-      try {
-        const data = await graphqlService.getInternByUserId(userId);
-        setIntern(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
+      setIntern(profileData);
+      if (streakData.success) {
+        setStreakStatus(streakData);
       }
-    };
-    fetchProfile();
+      if (taskData.success) {
+        setTaskStreakStatus(taskData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfileData();
   }, [userId]);
 
   if (isLoading) {
@@ -71,8 +95,103 @@ export default function InternProfilePage() {
   const deptHead = intern.user.department?.users?.[0];
 
   return (
-    <div className="container max-w-5xl mx-auto py-8 px-4 space-y-8">
-      <WelcomeHeader name={`${intern.user.first_name} ${intern.user.last_name || ""}`} role="INTERN" />
+    <div className="container max-w-5xl mx-auto py-8 px-4 space-y-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <WelcomeHeader name={`${intern.user.first_name} ${intern.user.last_name || ""}`} role="INTERN" />
+        <Link href="/leaderboard">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-primary text-primary-foreground font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 cursor-pointer"
+          >
+            <Trophy className="w-4 h-4" />
+            View Leaderboard
+          </motion.div>
+        </Link>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-8">
+        <TabsList className="bg-muted/50 p-1.5 rounded-2xl border border-border/50">
+          <TabsTrigger value="overview" className="rounded-xl px-8 uppercase text-[10px] font-black tracking-widest">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="rounded-xl px-8 uppercase text-[10px] font-black tracking-widest">
+            My Tasks
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8">
+          {/* STREAK & STATS SECTION */}
+        <AnimatePresence>
+          {streakStatus && (
+            <motion.div
+              key="attendance-streak"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-6"
+            >
+              {streakStatus.streakAtRisk && (
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 animate-pulse">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <p className="text-sm font-black uppercase tracking-tight">
+                    Your streak will break today! Mark your attendance now! 🔥
+                  </p>
+                </div>
+              )}
+              
+              <StreakDisplay 
+                currentStreak={streakStatus.currentStreak}
+                longestStreak={streakStatus.longestStreak}
+                totalPoints={streakStatus.totalPoints}
+                nextMilestoneDays={streakStatus.nextMilestone?.days}
+                daysToNext={streakStatus.daysToNext}
+                hasMarkedToday={streakStatus.hasMarkedToday}
+                streakAtRisk={streakStatus.streakAtRisk}
+              />
+            </motion.div>
+          )}
+
+          {taskStreakStatus && (
+            <motion.div
+              key="task-streak"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="space-y-6"
+            >
+               <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Task Productivity Streak</h3>
+               </div>
+               
+               <TaskStreakDisplay 
+                  currentStreak={taskStreakStatus.currentStreak}
+                  longestStreak={taskStreakStatus.longestStreak}
+                  totalPoints={taskStreakStatus.totalPoints}
+                  nextMilestoneDays={taskStreakStatus.nextMilestone?.days}
+                  daysToNext={taskStreakStatus.daysToNext}
+                  hasCompletedToday={taskStreakStatus.hasCompletedToday}
+                  streakAtRisk={taskStreakStatus.streakAtRisk}
+               />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/60">Your Achievements</h2>
+        </div>
+        <BadgeGrid 
+          badges={(intern.intern_badges || []).map((ib: any) => ({
+            id: ib.badge.id,
+            name: ib.badge.name,
+            icon: ib.badge.icon,
+            description: ib.badge.description,
+            earned_at: ib.earned_at
+          }))} 
+        />
+      </div>
 
       {/* 1. IDENTITY CARD */}
       <Card className="overflow-hidden border-border/50 shadow-sm mt-8">
@@ -135,7 +254,12 @@ export default function InternProfilePage() {
                  </div>
                  <div>
                    <p className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest mb-0.5">End Date</p>
-                   <p className="text-sm font-bold">{intern.end_date ? new Date(intern.end_date).toLocaleDateString(undefined, { dateStyle: 'long' }) : "N/A"}</p>
+                   <p className={cn("text-sm font-bold", !intern.end_date && "text-emerald-500")}>
+                     {intern.end_date 
+                       ? new Date(intern.end_date).toLocaleDateString(undefined, { dateStyle: 'long' }) 
+                       : "Present"
+                     }
+                   </p>
                  </div>
                </div>
             </div>
@@ -204,9 +328,10 @@ export default function InternProfilePage() {
              <div className="space-y-6">
                <div className="grid grid-cols-1 gap-4">
                  <InfoField label="Email Address" value={intern.user.email} />
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-3 gap-4">
                    <InfoField label="Phone" value={intern.user.phone || "N/A"} />
                    <InfoField label="Date of Birth" value={intern.dob || "N/A"} />
+                   <InfoField label="Blood Group" value={intern.blood_group || "N/A"} />
                  </div>
                </div>
                <div className="h-[1px] bg-border/30 w-full" />
@@ -235,9 +360,18 @@ export default function InternProfilePage() {
               <ProfileLink label="LinkedIn" value={intern.linkedin_url} icon={Linkedin} />
               <ProfileLink label="Portfolio" value={intern.portfolio_url} icon={Globe} />
            </div>
-        </CardContent>
+         </CardContent>
       </Card>
-    </div>
+    </TabsContent>
+
+    <TabsContent value="tasks" className="mt-8">
+       <TaskBoard 
+        internId={intern.id} 
+        onTaskCompleted={() => fetchProfileData()} 
+       />
+    </TabsContent>
+  </Tabs>
+</div>
   );
 }
 
