@@ -12,7 +12,14 @@ const ASK_ENDPOINT = `${API_BASE_URL}/api/v0/ask`;
  * @param question Natural language question
  * @returns AskResult with data or error
  */
-export async function askVanna(question: string): Promise<AskResult> {
+export async function askVanna(
+  question: string,
+  scope?: {
+    role?: "admin" | "super_admin";
+    organizationId?: string;
+    departmentId?: string;
+  }
+): Promise<AskResult> {
   if (!question?.trim()) {
     return {
       success: false,
@@ -24,7 +31,12 @@ export async function askVanna(question: string): Promise<AskResult> {
   }
 
   try {
-    const payload: VannaAskRequest = { question };
+    const payload: VannaAskRequest = {
+      question,
+      role: scope?.role === "admin" ? "DEPT_ADMIN" : "SUPER_ADMIN",
+      organization_id: scope?.organizationId,
+      department_id: scope?.departmentId,
+    };
 
     const response = await fetch(ASK_ENDPOINT, {
       method: "POST",

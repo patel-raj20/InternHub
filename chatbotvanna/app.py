@@ -11,7 +11,8 @@ import os
 import logging
 import pandas as pd
 from contextlib import asynccontextmanager
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
+import re
 
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,6 +40,57 @@ ALLOW_NULL_ORIGIN = os.getenv("ALLOW_NULL_ORIGIN", "true").lower() == "true"
 # ── Models ─────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
     question: str
+    role: Optional[Literal["DEPT_ADMIN", "SUPER_ADMIN"]] = None
+    organization_id: Optional[str] = None
+    department_id: Optional[str] = None
+
+
+def _build_scoped_question(payload: ChatRequest) -> str:
+    """Inject strict scope instructions into NL question before SQL generation."""
+    if payload.role != "DEPT_ADMIN":
+        return payload.question
+
+    if not payload.department_id:
+        raise HTTPException(403, "Department scope is required for DEPT_ADMIN")
+
+    scope_guard = (
+        "You MUST generate a single SELECT query scoped strictly to one department. "
+        f"Always include a filter that restricts results to users.department_id = '{payload.department_id}'. "
+        "Do not return data from any other department."
+    )
+
+    return f"{scope_guard}\n\nUser question: {payload.question}"
+
+
+def _validate_scoped_sql(sql: str, payload: ChatRequest) -> None:
+    """Fail closed if SQL is unsafe or missing DEPT_ADMIN scope."""
+    sql_l = (sql or "").lower()
+
+    # Read-only guard
+    if not (sql_l.strip().startswith("select") or sql_l.strip().startswith("with")):
+        raise HTTPException(403, "Only read-only SQL is allowed")
+
+    # Block multi-statement attempts
+    if ";" in sql.strip().rstrip(";"):
+        raise HTTPException(403, "Multiple SQL statements are not allowed")
+
+    if payload.role == "DEPT_ADMIN":
+        if not payload.department_id:
+            raise HTTPException(403, "Department scope is required for DEPT_ADMIN")
+
+        dept_id = payload.department_id.lower()
+        has_dept_col = "department_id" in sql_l
+        has_exact_dept = dept_id in sql_l
+
+        # Ensure generated SQL explicitly contains the caller department id and department filter usage.
+        if not (has_dept_col and has_exact_dept):
+            raise HTTPException(403, "Query rejected: missing required department scope")
+
+        # Ensure query cannot reference another department id literal.
+        uuid_like = re.findall(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", sql_l)
+        for value in uuid_like:
+            if value != dept_id:
+                raise HTTPException(403, "Query rejected: cross-department filter detected")
 
 # ── Lifespan ───────────────────────────────────────────────────────────
 @asynccontextmanager
@@ -94,8 +146,12 @@ async def health():
 async def generate_sql(payload: ChatRequest):
     """Generate SQL from natural language (Auth Disabled)."""
     try:
-        sql = vn.generate_sql(question=payload.question)
+        scoped_question = _build_scoped_question(payload)
+        sql = vn.generate_sql(question=scoped_question)
+        _validate_scoped_sql(sql, payload)
         return {"sql": sql}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"SQL generation failed: {e}")
         raise HTTPException(500, f"Error generating SQL: {str(e)}")
@@ -106,6 +162,15 @@ async def run_sql(payload: Dict[str, str]):
     sql = payload.get("sql")
     if not sql:
         raise HTTPException(400, "SQL missing")
+
+    scoped_payload = ChatRequest(
+        question="run_sql",
+        role=payload.get("role"),
+        organization_id=payload.get("organization_id"),
+        department_id=payload.get("department_id"),
+    )
+
+    _validate_scoped_sql(sql, scoped_payload)
     
     try:
         df = vn.run_sql(sql)
@@ -116,6 +181,8 @@ async def run_sql(payload: Dict[str, str]):
             "results": df.to_dict(orient="records"),
             "columns": list(df.columns)
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"SQL execution failed: {e}")
         raise HTTPException(500, f"Database error: {str(e)}")
@@ -124,7 +191,9 @@ async def run_sql(payload: Dict[str, str]):
 async def ask(payload: ChatRequest):
     """Full natural language query lifecycle (Auth Disabled)."""
     try:
-        sql = vn.generate_sql(question=payload.question)
+        scoped_question = _build_scoped_question(payload)
+        sql = vn.generate_sql(question=scoped_question)
+        _validate_scoped_sql(sql, payload)
         df = vn.run_sql(sql)
         
         results = []
@@ -139,6 +208,8 @@ async def ask(payload: ChatRequest):
             "results": results,
             "columns": columns
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Ask query failed: {e}")
         raise HTTPException(500, f"Error processing query: {str(e)}")

@@ -2,7 +2,10 @@
 // Super Admin Chatbot Page - Organization-wide assistant
 // ============================================================
 
+"use client";
+
 import React from "react";
+import { useSession } from "next-auth/react";
 import { ChatPageShell } from "@/components/chatbot/ChatPageShell";
 import { ChatbotScope } from "@/components/chatbot/types";
 
@@ -16,11 +19,12 @@ import { ChatbotScope } from "@/components/chatbot/types";
  * For now, using placeholder values for demonstration.
  */
 export default function SuperAdminChatbotPage() {
-  // TODO: Replace with actual values from session/auth context
+  const { data: session } = useSession();
+
   const scope: ChatbotScope = {
     role: "super_admin",
-    organizationId: "org-123", // Super admin has org-level access
-    userId: "user-super-admin-789",
+    organizationId: session?.user?.organization_id,
+    userId: session?.user?.id,
   };
 
   return <ChatPageShell scope={scope} />;

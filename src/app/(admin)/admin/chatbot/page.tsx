@@ -2,7 +2,10 @@
 // Admin Chatbot Page - Department-scoped assistant
 // ============================================================
 
+"use client";
+
 import React from "react";
+import { useSession } from "next-auth/react";
 import { ChatPageShell } from "@/components/chatbot/ChatPageShell";
 import { ChatbotScope } from "@/components/chatbot/types";
 
@@ -16,12 +19,13 @@ import { ChatbotScope } from "@/components/chatbot/types";
  * For now, using placeholder values for demonstration.
  */
 export default function AdminChatbotPage() {
-  // TODO: Replace with actual values from session/auth context
+  const { data: session } = useSession();
+
   const scope: ChatbotScope = {
     role: "admin",
-    organizationId: "org-123",
-    departmentId: "dept-456", // Admin can only access their department
-    userId: "user-789",
+    organizationId: session?.user?.organization_id,
+    departmentId: session?.user?.department_id,
+    userId: session?.user?.id,
   };
 
   return <ChatPageShell scope={scope} />;

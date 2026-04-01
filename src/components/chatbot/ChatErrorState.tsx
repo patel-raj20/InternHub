@@ -10,20 +10,17 @@ export const ChatErrorState: React.FC<ChatErrorStateProps> = ({
   onRetry,
 }) => {
   return (
-    <div className="mx-4 mt-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex items-center gap-3">
-      {/* Error Icon */}
-      <div className="text-red-400 text-xl flex-shrink-0">⚠️</div>
+    <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/8 p-4 md:mx-6">
+      <div className="shrink-0 text-lg font-black text-destructive">!</div>
 
-      {/* Error Content */}
       <div className="flex-1">
-        <p className="text-sm text-red-300 font-medium">Query failed</p>
-        <p className="text-xs text-red-400/70 mt-1">{error}</p>
+        <p className="text-xs font-black uppercase tracking-wider text-destructive">Query failed</p>
+        <p className="mt-1 text-xs text-destructive/90">{error}</p>
       </div>
 
-      {/* Retry Button */}
       <button
         onClick={onRetry}
-        className="text-xs px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-md transition-colors font-medium whitespace-nowrap"
+        className="whitespace-nowrap rounded-lg border border-destructive/40 bg-background/80 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/10"
       >
         Retry
       </button>

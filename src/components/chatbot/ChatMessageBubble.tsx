@@ -15,28 +15,28 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
 
   return (
     <div
-      className={`flex gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+      className={`mb-5 flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
         isUser ? "flex-row-reverse" : ""
       }`}
     >
       {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-primary/10 text-[10px] font-black tracking-wide text-primary">
           AI
         </div>
       )}
 
       <div className={`flex flex-col ${isUser ? "items-end" : "items-start w-full"}`}>
         <div
-          className={`px-4 py-3 rounded-2xl max-w-xs ${
+          className={`max-w-[78%] rounded-2xl px-4 py-3 ${
             isUser
-              ? "bg-indigo-600 text-white rounded-br-sm"
-              : "bg-slate-100 text-slate-800 border border-slate-200 rounded-bl-sm"
+              ? "rounded-br-sm bg-primary text-primary-foreground shadow-sm"
+              : "rounded-bl-sm border border-border/60 bg-background/70 text-foreground"
           }`}
         >
           <p className="text-sm leading-relaxed">{message.content}</p>
         </div>
 
-        <p className="text-xs text-slate-400 mt-1 px-2">
+        <p className="mt-1 px-2 text-xs text-muted-foreground/80">
           {message.timestamp.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -44,19 +44,19 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
         </p>
 
         {!isUser && result && showResult && (
-          <div className="mt-4 w-full max-w-none lg:max-w-4xl">
-            <div className="mb-4 bg-slate-50 rounded-lg p-3 border border-slate-200 border-l-4 border-indigo-500">
-              <div className="text-xs font-semibold text-indigo-600 mb-2 flex justify-between">
+          <div className="mt-3.5 w-full max-w-none lg:max-w-4xl">
+            <div className="mb-3 rounded-xl border border-border/60 bg-muted/25 p-3.5">
+              <div className="mb-2 flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 <span>Generated PostgreSQL Query</span>
-                <span className="text-slate-400 text-xs">Vanna 2.0</span>
+                <span className="text-[10px]">Vanna 2.0</span>
               </div>
-              <code className="text-xs text-slate-700 font-mono break-all whitespace-pre-wrap">
+              <code className="font-mono text-xs text-foreground break-all whitespace-pre-wrap">
                 {result.sql}
               </code>
             </div>
 
             {firstRow && (
-              <div className="mb-3 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-md border border-slate-200">
+              <div className="mb-3 rounded-md border border-border/60 bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
                 Top result preview: {Object.entries(firstRow)
                   .slice(0, 3)
                   .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v ?? "-"}`)
@@ -64,19 +64,19 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
               </div>
             )}
 
-            <div className="mb-4 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+            <div className="mb-3 overflow-x-auto rounded-xl border border-border/60 bg-background/80">
               {result.results.length === 0 ? (
-                <div className="px-3 py-3 text-xs text-slate-500 text-center">
+                <div className="px-3 py-3 text-center text-xs text-muted-foreground">
                   No records found in database.
                 </div>
               ) : (
-                <table className="w-full min-w-[560px] text-xs">
+                <table className="w-full min-w-140 text-xs">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-500">
+                    <tr className="bg-muted/30 text-muted-foreground">
                       {result.columns.map((col) => (
                         <th
                           key={col}
-                          className="text-left px-3 py-2 uppercase tracking-wide font-semibold"
+                          className="px-3 py-2 text-left font-black uppercase tracking-widest"
                         >
                           {col.replace(/_/g, " ")}
                         </th>
@@ -87,7 +87,7 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
                     {result.results.map((row, rowIdx) => (
                       <tr
                         key={rowIdx}
-                        className="border-t border-slate-200 text-slate-700"
+                        className="border-t border-border/50 text-foreground"
                       >
                         {result.columns.map((col) => (
                           <td key={`${rowIdx}-${col}`} className="px-3 py-2 align-top">
@@ -103,7 +103,7 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
               )}
             </div>
 
-            <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-md border border-slate-200">
+            <div className="rounded-md border border-border/60 bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
               <span className="font-medium">Returned {result.results.length} row(s)</span>
             </div>
           </div>

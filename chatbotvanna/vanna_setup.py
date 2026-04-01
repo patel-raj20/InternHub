@@ -9,6 +9,7 @@ Using Vanna 2.0 (Agentic Framework) Legacy Adapter for compatibility.
 import os
 import logging
 from typing import Optional, Any
+from pathlib import Path
 from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
 from groq import Groq
@@ -17,6 +18,12 @@ from groq import Groq
 from vanna.legacy.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.legacy.base.base import VannaBase
 
+BASE_DIR = Path(__file__).resolve().parent
+
+# Load environment variables in a predictable order so script launch location
+# does not affect database settings resolution.
+load_dotenv(BASE_DIR / ".env", override=False)
+load_dotenv(BASE_DIR.parent / ".env", override=False)
 load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)

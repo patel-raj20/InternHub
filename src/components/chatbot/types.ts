@@ -34,6 +34,9 @@ export interface ChatQueryResult {
 // API Request to /api/v0/ask
 export interface VannaAskRequest {
   question: string;
+  role?: "DEPT_ADMIN" | "SUPER_ADMIN";
+  organization_id?: string;
+  department_id?: string;
 }
 
 // API Response from /api/v0/ask

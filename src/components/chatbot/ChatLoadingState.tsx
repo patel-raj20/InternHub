@@ -9,27 +9,25 @@ export const ChatLoadingState: React.FC<ChatLoadingStateProps> = ({
   message = "Thinking...",
 }) => {
   return (
-    <div className="flex items-end gap-3 px-4 py-4">
-      {/* Avatar */}
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+    <div className="flex items-end gap-3 px-1 py-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-primary/10 text-[10px] font-black text-primary">
         AI
       </div>
 
-      {/* Typing Bubble */}
-      <div className="glass-card px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs">
+      <div className="max-w-xs rounded-2xl rounded-bl-sm border border-border/60 bg-muted/25 px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/70" />
             <div
-              className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+              className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/70"
               style={{ animationDelay: "0.2s" }}
             />
             <div
-              className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+              className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/70"
               style={{ animationDelay: "0.4s" }}
             />
           </div>
-          <span className="text-xs text-slate-400">{message}</span>
+          <span className="text-xs text-muted-foreground">{message}</span>
         </div>
       </div>
     </div>
