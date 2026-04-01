@@ -5,11 +5,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { ChatPageShellProps, ChatMessage, SuggestedPrompt } from "@/components/chatbot/types";
+import { ChatPageShellProps, ChatMessage } from "@/components/chatbot/types";
 import { askVanna } from "@/lib/chatbot/vanna-adapter";
-import {
-  getSuggestedPrompts,
-} from "@/components/chatbot/mockData";
 import { ChatEmptyState } from "@/components/chatbot/ChatEmptyState";
 import { ChatMessageList } from "@/components/chatbot/ChatMessageList";
 import { ChatComposer } from "@/components/chatbot/ChatComposer";
@@ -24,10 +21,11 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
   // Determine scope labels
   const roleLabel =
     scope.role === "admin"
-      ? "Department-scoped assistant"
-      : "Organization-wide assistant";
+      ? "Department scoped assistant"
+      : "Organization wide assistant";
 
   const pageTitle = "InternHub Data Assistant";
+  const isScopeReady = scope.role === "super_admin" || !!scope.departmentId;
 
   // Handlers
 
@@ -37,6 +35,10 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
   const handleSendQuestion = useCallback(
     async (question: string) => {
       if (!question.trim()) return;
+      if (!isScopeReady) {
+        setError("Waiting for your department scope. Please try again in a moment.");
+        return;
+      }
 
       // Add user message
       const userMessage: ChatMessage = {
@@ -52,7 +54,7 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
 
       try {
         // Call Vanna API
-        const result = await askVanna(question);
+        const result = await askVanna(question, scope);
 
         if (!result.success || !result.data) {
           throw new Error(result.error?.message || "Query failed");
@@ -94,7 +96,7 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
         setIsLoading(false);
       }
     },
-    []
+    [scope, isScopeReady]
   );
 
   /**
@@ -133,21 +135,30 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="h-screen bg-white text-slate-900">
-      <div className="mx-auto h-full w-full max-w-6xl flex flex-col px-4 md:px-8 py-6">
-        <div className="shrink-0 mb-4">
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">
-              Vanna 2.0 Agent
-            </p>
-            <h1 className="text-4xl font-bold text-slate-900 mb-1">
-              {pageTitle}
-            </h1>
-            <p className="text-sm text-slate-500">{roleLabel}</p>
+    <div className="h-screen bg-linear-to-b from-background via-background to-muted/30 text-foreground">
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-4 py-5 md:px-8 md:py-7">
+        <div className="glass-card mb-4 shrink-0 rounded-2xl border-border/60 px-5 py-4">
+          <div className="mb-2 inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+            Vanna 2.0 Agent
+          </div>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-black tracking-tighter text-foreground md:text-3xl">
+                {pageTitle}
+              </h1>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">{roleLabel}</p>
+            </div>
+            <button
+              onClick={handleNewChat}
+              className="rounded-xl border border-border/70 bg-background/70 px-3.5 py-2 text-[11px] font-black uppercase tracking-wider text-foreground transition-all hover:border-primary/30 hover:bg-muted/50"
+            >
+              New chat
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="glass-card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-border/60">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-linear-to-b from-muted/40 to-transparent" />
           {isEmpty ? (
             <ChatEmptyState role={scope.role} />
           ) : (
@@ -158,7 +169,7 @@ export const ChatPageShell: React.FC<ChatPageShellProps> = ({ scope }) => {
         </div>
 
         <ChatComposer
-          isDisabled={false}
+          isDisabled={!isScopeReady}
           isLoading={isLoading}
           onSubmit={handleSendQuestion}
           onClear={handleClear}

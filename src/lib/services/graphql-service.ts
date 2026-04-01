@@ -3,21 +3,42 @@ import * as Queries from "@/graphql/queries";
 import * as Mutations from "@/graphql/mutations";
 import { Intern, Department, Organization } from "@/lib/types";
 import bcrypt from "bcryptjs";
+import { getSession } from "next-auth/react";
 
 /**
  * GraphQLService - Encapsulates all GraphQL operations.
  * Follows SOLID principles by separating data access from the UI.
  */
 class GraphQLService {
+  private async getAccessScope() {
+    const session = await getSession();
+    return {
+      role: session?.user?.role,
+      organization_id: session?.user?.organization_id,
+      department_id: session?.user?.department_id,
+    };
+  }
+
+  private isDeptAdmin(role?: string) {
+    return role === "DEPT_ADMIN";
+  }
+
   // --- Interns ---
 
   async getInterns(organizationId?: string, departmentId?: string): Promise<Intern[]> {
+    const scope = await this.getAccessScope();
+    const isDeptAdmin = this.isDeptAdmin(scope.role);
+    const scopedOrganizationId = isDeptAdmin ? (scope.organization_id || organizationId) : organizationId;
+    const scopedDepartmentId = isDeptAdmin ? scope.department_id : departmentId;
+
+    if (isDeptAdmin && !scopedDepartmentId) return [];
+
     const { data } = await client.query<{ interns: Intern[] }>({
       query: Queries.GET_INTERNS,
       variables: {
         where: {
-          ...(organizationId ? { organization_id: { _eq: organizationId } } : {}),
-          ...(departmentId ? { user: { department_id: { _eq: departmentId } } } : {})
+          ...(scopedOrganizationId ? { organization_id: { _eq: scopedOrganizationId } } : {}),
+          ...(scopedDepartmentId ? { user: { department_id: { _eq: scopedDepartmentId } } } : {})
         }
       },
       fetchPolicy: "network-only",
@@ -25,13 +46,33 @@ class GraphQLService {
     return data?.interns || [];
   }
 
-  async getInternById(id: string): Promise<Intern> {
+  async getInternById(id: string): Promise<Intern | null> {
+    const scope = await this.getAccessScope();
+
+    if (this.isDeptAdmin(scope.role)) {
+      if (!scope.department_id) return null;
+
+      const { data } = await client.query<{ interns: Intern[] }>({
+        query: Queries.GET_INTERNS,
+        variables: {
+          where: {
+            id: { _eq: id },
+            user: { department_id: { _eq: scope.department_id } },
+            ...(scope.organization_id ? { organization_id: { _eq: scope.organization_id } } : {}),
+          },
+        },
+        fetchPolicy: "network-only",
+      });
+
+      return data?.interns?.[0] || null;
+    }
+
     const { data } = await client.query<{ interns_by_pk: Intern }>({
       query: Queries.GET_INTERN_BY_ID,
       variables: { id },
       fetchPolicy: "network-only",
     });
-    return data?.interns_by_pk as Intern;
+    return data?.interns_by_pk || null;
   }
 
   async getInternByUserId(userId: string): Promise<Intern> {
@@ -44,6 +85,16 @@ class GraphQLService {
   }
 
   async addIntern(formData: any) {
+    const scope = await this.getAccessScope();
+    const isDeptAdmin = this.isDeptAdmin(scope.role);
+
+    const organizationId = isDeptAdmin ? (scope.organization_id || formData.organization_id) : formData.organization_id;
+    const departmentId = isDeptAdmin ? (scope.department_id || formData.department_id) : formData.department_id;
+
+    if (isDeptAdmin && !departmentId) {
+      throw new Error("Department admin must belong to a department");
+    }
+
     let token = "";
     if(formData.invite_token){
       token = formData.invite_token;
@@ -55,7 +106,7 @@ class GraphQLService {
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
 
     const internData: any = {
-      organization_id: formData.organization_id,
+      organization_id: organizationId,
       college_name: formData.college_name,
       degree: formData.degree,
       specialization: formData.specialization,
@@ -81,8 +132,8 @@ class GraphQLService {
 
       internData.user = {
         data: {
-          organization_id: formData.organization_id,
-          department_id: formData.department_id,
+          organization_id: organizationId,
+          department_id: departmentId,
           first_name,
           last_name,
           email: formData.email,
@@ -125,6 +176,18 @@ class GraphQLService {
   }
 
   async updateIntern(id: string, internChanges: any, userId: string, userChanges: any) {
+    const scope = await this.getAccessScope();
+    if (this.isDeptAdmin(scope.role)) {
+      const allowedIntern = await this.getInternById(id);
+      if (!allowedIntern) {
+        throw new Error("Unauthorized department access");
+      }
+
+      if (scope.department_id) {
+        userChanges = { ...userChanges, department_id: scope.department_id };
+      }
+    }
+
     const { data } = await client.mutate({
       mutation: Mutations.UPDATE_INTERN,
       variables: { id, internChanges, userId, userChanges },
@@ -133,6 +196,14 @@ class GraphQLService {
   }
 
   async deleteIntern(id: string, userId: string) {
+    const scope = await this.getAccessScope();
+    if (this.isDeptAdmin(scope.role)) {
+      const allowedIntern = await this.getInternById(id);
+      if (!allowedIntern) {
+        throw new Error("Unauthorized department access");
+      }
+    }
+
     const { data } = await client.mutate({
       mutation: Mutations.DELETE_INTERN,
       variables: { id, userId },
@@ -143,16 +214,28 @@ class GraphQLService {
   // --- Departments ---
 
   async getDepartments(orgId: string): Promise<Department[]> {
+    const scope = await this.getAccessScope();
+    const isDeptAdmin = this.isDeptAdmin(scope.role);
+    const scopedOrgId = isDeptAdmin ? (scope.organization_id || orgId) : orgId;
+
+    if (!scopedOrgId) return [];
+
     const { data } = await client.query<{ departments: any[] }>({
       query: Queries.GET_DEPARTMENTS,
-      variables: { organization_id: orgId },
+      variables: { organization_id: scopedOrgId },
       fetchPolicy: "network-only",
     });
-    return (data?.departments || []).map((dept: any) => ({
+    const departments = (data?.departments || []).map((dept: any) => ({
       ...dept,
       intern_count: dept.users_aggregate?.aggregate?.count || 0,
       head: dept.users?.[0] || null
     }));
+
+    if (isDeptAdmin) {
+      return departments.filter((dept: any) => dept.id === scope.department_id);
+    }
+
+    return departments;
   }
 
   async addDepartment(formData: any) {

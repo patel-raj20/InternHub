@@ -45,9 +45,8 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   };
 
   return (
-    <div className="sticky bottom-0 left-0 right-0 pt-3 pb-2 bg-white">
-      <div className="rounded-2xl p-4 border border-slate-200 bg-white shadow-sm flex gap-3">
-        {/* Textarea */}
+    <div className="sticky bottom-0 left-0 right-0 bg-transparent pb-1 pt-3">
+      <div className="glass-card mx-auto flex w-full max-w-5xl gap-3 rounded-2xl border-border/60 p-2.5">
         <textarea
           ref={textareaRef}
           value={input}
@@ -55,45 +54,40 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Ask anything about interns, departments, or organizations..."
           disabled={isDisabled || isLoading}
-          className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 outline-none resize-none max-h-32 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="max-h-32 flex-1 resize-none rounded-xl border border-border/50 bg-muted/25 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
           rows={1}
         />
 
-        {/* Buttons */}
-        <div className="flex flex-col gap-2">
-          {/* Send Button */}
+        <div className="flex items-end gap-2">
           <button
             onClick={handleSubmit}
             disabled={isDisabled || isLoading || !input.trim()}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white rounded-lg font-medium text-sm transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-[11px] font-black uppercase tracking-wider text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
           >
             {isLoading ? (
               <>
-                <div className="w-4 h-4 border-2 border-indigo-200 border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/50 border-t-transparent" />
                 <span>Sending</span>
               </>
             ) : (
               <>
                 <span>Send</span>
-                <span>↵</span>
               </>
             )}
           </button>
 
-          {/* Clear Button */}
           <button
             onClick={handleClear}
             disabled={isDisabled || isLoading}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Clear
           </button>
         </div>
       </div>
 
-      {/* Keyboard Hint */}
-      <div className="text-xs text-slate-400 mt-2 text-center">
-        <span>⌨️ Shift+Enter for newline</span>
+      <div className="mt-2 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+        <span>Shift+Enter for newline</span>
       </div>
     </div>
   );

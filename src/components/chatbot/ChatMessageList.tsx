@@ -28,26 +28,28 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-4 scroll-smooth"
+      className="flex-1 min-h-0 space-y-4 overflow-y-auto px-4 py-5 scroll-smooth md:px-6"
     >
-      {/* Messages */}
-      {messages.map((msg, idx) => (
-        <ChatMessageBubble
-          key={msg.id}
-          message={msg}
-          showResult={msg.role === "assistant"}
-        />
-      ))}
+      <div className="mx-auto w-full max-w-5xl">
+        {/* Messages */}
+        {messages.map((msg, idx) => (
+          <ChatMessageBubble
+            key={msg.id}
+            message={msg}
+            showResult={msg.role === "assistant"}
+          />
+        ))}
 
-      {/* Loading State */}
-      {isLoading && <ChatLoadingState message="Generating response..." />}
+        {/* Loading State */}
+        {isLoading && <ChatLoadingState message="Generating response..." />}
 
-      {/* Scroll hint (only when not at bottom) */}
-      {messages.length > 0 && (
-        <div className="text-center text-xs text-slate-600 py-4">
-          {/* Spacer */}
-        </div>
-      )}
+        {/* Scroll hint (only when not at bottom) */}
+        {messages.length > 0 && (
+          <div className="py-3 text-center text-xs text-slate-500">
+            {/* Spacer */}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
