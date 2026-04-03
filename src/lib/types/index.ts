@@ -156,4 +156,21 @@ export interface Task {
   deadline: string;
   completed_at?: string;
   created_at: string;
+  parent_dept_task_id?: string; // Link to department task
+}
+
+export interface DepartmentTask {
+  id: string;
+  organization_id: string;
+  department_id: string;
+  title: string;
+  description: string;
+  status: 'PENDING' | 'ASSIGNED' | 'COMPLETED';
+  created_by: string;
+  deadline: string;
+  created_at: string;
+  updated_at: string;
+  department?: {
+    name: string;
+  };
 }

@@ -62,6 +62,9 @@ CREATE TABLE users (
     invite_token TEXT UNIQUE,
     invite_expires_at TIMESTAMP,
 
+    reset_otp VARCHAR(10),
+    reset_otp_expires_at TIMESTAMP,
+
     last_login_at TIMESTAMP,
 
     created_by UUID,

@@ -167,13 +167,14 @@ function PodiumItem({ item, rank, color, bgColor, borderColor, isWinner }: any) 
       </div>
 
       {item.badges.length > 0 && (
-         <div className="flex gap-1 mt-4">
-            {item.badges.slice(0, 3).map((badge: any, i: number) => (
-               <div key={i} className="p-1 rounded-lg bg-muted border border-border/50 title={badge.name}">
-                  <span className="text-xs">
-                     {/* Icon logic would go here, using a placeholder for now */}
-                     🏅
-                  </span>
+         <div className="flex gap-1.5 mt-4">
+            {item.badges.slice(0, 4 - rank).map((badge: any, i: number) => (
+               <div 
+                 key={i} 
+                 className="p-1.5 rounded-lg bg-background shadow-inner border border-border/50 group/badge transition-all"
+                 title={badge.name}
+               >
+                  <Medal className={cn("w-3 h-3", color, "opacity-70 group-hover/badge:opacity-100")} />
                </div>
             ))}
          </div>

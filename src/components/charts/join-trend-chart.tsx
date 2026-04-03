@@ -7,9 +7,9 @@ import {
   Tooltip, 
   XAxis, 
   YAxis,
-  CartesianGrid
+  CartesianGrid,
+  Cell
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface JoinTrendChartProps {
   data: { name: string; total: number }[];
@@ -18,32 +18,41 @@ interface JoinTrendChartProps {
 export function JoinTrendChart({ data }: JoinTrendChartProps) {
   if (!data || data.length === 0) {
     return (
-      <Card className="col-span-full lg:col-span-8 border-border/50">
-        <CardHeader>
-           <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 text-center py-20">No joining trend data available</CardTitle>
-        </CardHeader>
-      </Card>
+      <div className="premium-glass glass-noise rounded-[2.5rem] p-6 relative overflow-hidden flex flex-col justify-center items-center h-[350px]">
+        <div className="h-8 w-8 rounded-full bg-blue-500/20 mb-4 animate-pulse flex items-center justify-center">
+            <div className="h-4 w-4 bg-blue-500 rounded-full" />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">No trend data</p>
+      </div>
     );
   }
 
   return (
-    <Card className="col-span-full lg:col-span-8 border-border/50 overflow-hidden shadow-xl">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">Monthly Joining Trend</CardTitle>
-            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest leading-none">Enrollments per month</p>
+    <div className="premium-glass glass-noise rounded-[2.5rem] p-8 relative overflow-hidden h-full min-h-[350px]">
+      <div className="glow-blob -top-20 -right-20 bg-blue-500/10" />
+      <div className="glow-blob -bottom-20 -left-20 bg-primary/10" />
+
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight drop-shadow-sm">Monthly Joining Trend</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-1">Enrollments per month</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 neon-glow" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Analytics</span>
+            <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 drop-shadow-sm">Growth</span>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px] min-h-[300px] w-full mt-4">
+
+        <div className="h-[250px] w-full mt-4 flex-1">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                 <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.4} />
+                 </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <XAxis 
                 dataKey="name" 
@@ -51,7 +60,7 @@ export function JoinTrendChart({ data }: JoinTrendChartProps) {
                 fontSize={10} 
                 tickLine={false} 
                 axisLine={false}
-                className="text-muted-foreground/40 font-bold uppercase tracking-widest"
+                className="text-muted-foreground/50 font-black uppercase tracking-widest"
               />
               <YAxis 
                 stroke="currentColor" 
@@ -60,20 +69,25 @@ export function JoinTrendChart({ data }: JoinTrendChartProps) {
                 axisLine={false} 
                 tickFormatter={(value) => `${value}`}
                 allowDecimals={false}
-                className="text-muted-foreground/40 font-bold"
+                className="text-muted-foreground/50 font-black"
               />
               <Tooltip 
-                cursor={{ fill: 'var(--primary)', opacity: 0.05 }}
+                cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 8 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
+                     const val = payload[0].value;
+                     const name = payload[0].payload.name;
                     return (
-                      <div className="glass-card rounded-xl border-border/50 p-3 shadow-2xl">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-                          {payload[0].payload.name}
-                        </p>
-                        <p className="text-sm font-black text-primary">
-                          {payload[0].value} <span className="text-[10px] opacity-60">Joined</span>
-                        </p>
+                      <div className="premium-glass rounded-2xl p-4 shadow-2xl backdrop-blur-xl border border-white/5 flex items-center gap-3">
+                         <div className="w-2 h-10 rounded-full bg-primary" style={{ boxShadow: `0 0 10px var(--primary)` }} />
+                         <div>
+                           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground/80 mb-0.5">
+                             {name}
+                           </p>
+                           <p className="text-2xl font-black text-primary drop-shadow-[0_0_8px_rgba(0,122,255,0.4)]">
+                             {val} <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50 ml-1">Joined</span>
+                           </p>
+                         </div>
                       </div>
                     );
                   }
@@ -82,15 +96,19 @@ export function JoinTrendChart({ data }: JoinTrendChartProps) {
               />
               <Bar
                 dataKey="total"
-                fill="var(--primary)"
-                radius={[6, 6, 0, 0]}
-                animationDuration={1500}
-                barSize={32}
-              />
+                radius={[8, 8, 8, 8]}
+                animationDuration={2000}
+                animationEasing="ease-in-out"
+                barSize={24}
+              >
+                 {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill="url(#trendGradient)" style={{ filter: `drop-shadow(0 0 8px rgba(0,122,255,0.4))` }} />
+                 ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

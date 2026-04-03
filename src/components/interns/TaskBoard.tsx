@@ -23,15 +23,25 @@ import toast from "react-hot-toast";
 
 interface Task {
   id: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   status: 'pending' | 'completed';
   category: string;
   difficulty: string;
   points_reward: number;
-  deadline: string;
+  deadline?: string;
   completed_at?: string;
   created_at: string;
+  department_task?: {
+    title?: string;
+    description?: string;
+    deadline?: string;
+    master_task?: {
+      title?: string;
+      description?: string;
+      deadline?: string;
+    }
+  }
 }
 
 interface TaskBoardProps {
@@ -110,22 +120,27 @@ export function TaskBoard({ internId, onTaskCompleted }: TaskBoardProps) {
   return (
     <div className="space-y-6">
       {/* Header & Filter */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary">
-            <CheckCircle2 className="w-5 h-5" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-black tracking-tight">Active Assignments</h2>
+          <div>
+            <h2 className="text-2xl font-black tracking-tighter uppercase leading-none mb-1">Active Assignments</h2>
+            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] ml-0.5">Track your progress here</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-2xl border border-border/50">
+        <div className="flex items-center gap-1.5 p-1.5 bg-muted/40 rounded-2xl border border-border/50 backdrop-blur-sm">
            {(['PENDING', 'COMPLETED', 'ALL'] as const).map((f) => (
              <button
                key={f}
                onClick={() => setFilter(f)}
                className={cn(
-                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 filter === f ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                 "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                 filter === f 
+                  ? "bg-background text-primary shadow-xl shadow-primary/10 border border-border/50 scale-[1.02]" 
+                  : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/60"
                )}
              >
                {f}
@@ -135,12 +150,17 @@ export function TaskBoard({ internId, onTaskCompleted }: TaskBoardProps) {
       </div>
 
       {tasks.length === 0 ? (
-        <div className="p-20 text-center glass-card rounded-[2rem] border-dashed border-2 border-border/50">
-           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 opacity-50">
-              <Calendar className="w-8 h-8 text-muted-foreground" />
+        <div className="py-32 flex flex-col items-center justify-center text-center space-y-6">
+           <div className="relative group">
+              <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl scale-[2.5] group-hover:scale-[3] transition-transform duration-700 opacity-60" />
+              <div className="relative w-24 h-24 rounded-[2rem] bg-background border border-border/50 flex items-center justify-center shadow-xl mb-2">
+                 <Calendar className="w-10 h-10 text-muted-foreground/40" />
+              </div>
            </div>
-           <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">No tasks assigned yet</p>
-           <p className="text-xs text-muted-foreground/60 mt-1">Check back later for new goals!</p>
+           <div className="space-y-2">
+              <h3 className="text-xl font-black uppercase tracking-tighter">No tasks assigned yet</h3>
+              <p className="text-sm text-muted-foreground/60 font-medium max-w-[280px]">Check back later for new goals or contact your department admin!</p>
+           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -160,8 +180,37 @@ export function TaskBoard({ internId, onTaskCompleted }: TaskBoardProps) {
   );
 }
 
+interface Task {
+  id: string;
+  title?: string;
+  description?: string;
+  status: 'pending' | 'completed';
+  category: string;
+  difficulty: string;
+  points_reward: number;
+  deadline?: string;
+  completed_at?: string;
+  parent_dept_task_id?: string;
+  created_at: string;
+  department_task?: {
+    title?: string;
+    description?: string;
+    deadline?: string;
+    master_task?: {
+      title?: string;
+      description?: string;
+      deadline?: string;
+    }
+  }
+}
+
+// ... existing TaskBoard component logic ...
 function TaskCard({ task, onComplete, isCompleting }: { task: Task; onComplete: () => void; isCompleting: boolean }) {
-  const isOverdue = new Date(task.deadline) < new Date() && task.status === 'pending';
+  const title = task.title || task.department_task?.title || task.department_task?.master_task?.title || 'Untitled Objective';
+  const description = task.description || task.department_task?.description || task.department_task?.master_task?.description || 'Strategic task content...';
+  const deadline = task.deadline || task.department_task?.deadline || task.department_task?.master_task?.deadline;
+
+  const isOverdue = deadline ? new Date(deadline) < new Date() && task.status === 'pending' : false;
   const isCompleted = task.status === 'completed';
 
   return (
@@ -182,12 +231,19 @@ function TaskCard({ task, onComplete, isCompleting }: { task: Task; onComplete: 
           {/* Top Info */}
           <div className="flex justify-between items-start mb-4">
              <div className="flex flex-col gap-1">
-                <Badge className={cn(
-                  "w-fit uppercase text-[8px] font-black tracking-widest",
-                   isCompleted ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
-                )}>
-                  {task.category}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn(
+                    "w-fit uppercase text-[8px] font-black tracking-widest",
+                     isCompleted ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                  )}>
+                    {task.category}
+                  </Badge>
+                  {task.parent_dept_task_id && (
+                    <Badge className="text-[7px] font-black uppercase tracking-tighter bg-amber-500/5 text-amber-500 border border-amber-500/20 hover:bg-amber-500/10">
+                      Departmental
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 mt-1">
                    <div className={cn(
                      "w-1.5 h-1.5 rounded-full",
@@ -212,10 +268,10 @@ function TaskCard({ task, onComplete, isCompleting }: { task: Task; onComplete: 
               "text-lg font-black tracking-tight line-clamp-1 group-hover:text-primary transition-colors",
               isCompleted && "line-through text-muted-foreground/60"
             )}>
-              {task.title}
+              {title}
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-              {task.description}
+              {description}
             </p>
           </div>
 
@@ -237,12 +293,17 @@ function TaskCard({ task, onComplete, isCompleting }: { task: Task; onComplete: 
                        "text-[10px] font-bold",
                        isOverdue ? "text-red-500/80" : "text-muted-foreground/60"
                      )}>
-                        {new Date(isCompleted ? task.completed_at! : task.deadline).toLocaleDateString(undefined, {
+                      <span className={cn(
+                        "text-[10px] font-bold",
+                        isOverdue ? "text-red-500/80" : "text-muted-foreground/60"
+                      )}>
+                        {deadline ? new Date(isCompleted ? task.completed_at! : deadline).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : 'No deadline set'}
+                      </span>
                      </span>
                   </div>
                </div>

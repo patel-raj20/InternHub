@@ -11,6 +11,8 @@ import { graphqlService } from "@/lib/services/graphql-service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import toast from "react-hot-toast";
+import { StatCard } from "@/components/ui/stat-card";
+import { Users, Activity, Target, Zap } from "lucide-react";
 
 interface InternsListProps {
   mode: "ADMIN" | "SUPER_ADMIN";
@@ -76,7 +78,7 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
         fullName.includes(search.toLowerCase()) ||
         (intern.user.email?.toLowerCase() || "").includes(search.toLowerCase());
       
-      const matchesStatus = status === "ALL" || intern.user.status === status;
+      const matchesStatus = status === "ALL" || intern.user.status?.toUpperCase() === status;
       const matchesDept = dept === "ALL" || intern.user.department_id === dept;
       const matchesDegree = degree === "ALL" || intern.degree === degree;
       const matchesCollege = college === "ALL" || intern.college_name === college;
@@ -84,6 +86,22 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
       return matchesSearch && matchesStatus && matchesDept && matchesDegree && matchesCollege;
     });
   }, [interns, search, status, dept, degree, college]);
+
+  const reportStats = useMemo(() => {
+    if (variant !== "report") return null;
+    const active = interns.filter(i => i.user?.status?.toLowerCase() === 'active').length;
+    const completed = interns.filter(i => i.user?.status?.toLowerCase() === 'completed').length;
+    const avgPoints = interns.length > 0 ? Math.round(interns.reduce((acc, i) => acc + (i.total_points || 0), 0) / interns.length) : 0;
+    const avgStreak = interns.length > 0 ? Math.round(interns.reduce((acc, i) => acc + (i.streak || 0), 0) / interns.length * 10) / 10 : 0;
+    
+    return {
+      total: interns.length,
+      active,
+      completed,
+      avgPoints,
+      avgStreak
+    };
+  }, [interns, variant]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const currentData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -109,6 +127,38 @@ export function InternsList({ mode, variant = "management" }: InternsListProps) 
 
   return (
     <div className="space-y-6">
+      {variant === "report" && reportStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+           <StatCard 
+             title="Total Intern Corps" 
+             value={reportStats.total} 
+             icon={<Users size={20} />} 
+             color="#7C3AED" 
+             description="Cumulative registered users"
+           />
+           <StatCard 
+             title="Operational Nodes" 
+             value={reportStats.active} 
+             icon={<Activity size={20} />} 
+             color="#10B981" 
+             description="Active execution units"
+           />
+           <StatCard 
+             title="Performance Yield" 
+             value={`${reportStats.avgPoints} pts`} 
+             icon={<Target size={20} />} 
+             color="#00D4FF" 
+             description="Average point distribution"
+           />
+           <StatCard 
+             title="Avg Consistency" 
+             value={`${reportStats.avgStreak}d`} 
+             icon={<Zap size={20} />} 
+             color="#F59E0B" 
+             description="Inter-departmental streak avg"
+           />
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-2xl border-primary/10 shadow-xl overflow-visible relative">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[40px] -mr-16 -mt-16 pointer-events-none" />
         <SearchBar value={search} onChange={setSearch} />

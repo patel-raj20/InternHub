@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
 
                 // 🔐 Improved Password Check (bcrypt supported)
                 let isValid = false;
-                const isHashed = user.password_hash.startsWith("$2b$");
+                const isHashed = user.password_hash.startsWith("$2");
 
                 if (isHashed) {
                     isValid = await bcrypt.compare(credentials.password, user.password_hash);

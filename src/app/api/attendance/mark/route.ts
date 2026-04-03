@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     const parts = qr_token.includes("|") ? qr_token.split("|") : qr_token.split(":");
     const deptId = parts[1];
     const qrDate = parts[2];
+    const qrVersion = parts[3];
 
     if (qrDate !== today) {
       return NextResponse.json({ error: "QR Code has expired" }, { status: 400 });
@@ -39,6 +40,15 @@ export async function POST(req: Request) {
     const settings = await graphqlService.getAttendanceSettings(deptId);
     if (!settings) {
       return NextResponse.json({ error: "Settings not found" }, { status: 400 });
+    }
+
+    // Check QR Rotation Version
+    const currentVersion = settings.updated_at 
+      ? new Date(settings.updated_at).getTime().toString().slice(-6) 
+      : "000000";
+    
+    if (qrVersion && qrVersion !== currentVersion) {
+      return NextResponse.json({ error: "Outdated QR Code. Please scan the latest code on your dashboard." }, { status: 400 });
     }
 
     // 3. Distance Check

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { QRCodeSVG } from "qrcode.react";
 import { graphqlService } from "@/lib/services/graphql-service";
@@ -34,28 +34,48 @@ export default function ManagerAttendancePage() {
   const { data: session } = useSession();
   const [settings, setSettings] = useState<AttendanceSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [qrToken, setQrToken] = useState("");
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [activeTab, setActiveTab] = useState("qr");
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
 
   const deptId = session?.user?.department_id;
 
-  const generateToken = () => {
-    if (deptId) {
-      const today = getLocalDateString();
-      const token = `ATT|${deptId}|${today}`;
-      console.log("[DEBUG] Manual Token Generation:", token);
-      setQrToken(token);
-      toast.success("QR Code refreshed for today");
-    } else {
-      toast.error("Department ID not found in session");
+  const qrToken = useMemo(() => {
+    if (!deptId || !settings) return "";
+    const today = getLocalDateString();
+    const version = settings.updated_at 
+      ? new Date(settings.updated_at).getTime().toString().slice(-6) 
+      : "000000";
+    return `ATT|${deptId}|${today}|${version}`;
+  }, [deptId, settings]);
+
+  const rotateQR = async () => {
+    if (!deptId) return;
+    try {
+      const currentSettings = settings || {
+        department_id: deptId,
+        office_lat: 0,
+        office_lng: 0,
+        allowed_radius_meters: 100,
+        work_start_time: "09:00",
+        late_threshold_minutes: 15
+      };
+
+      await graphqlService.upsertAttendanceSettings({
+        ...currentSettings,
+        updated_at: new Date().toISOString()
+      });
+      
+      await fetchData();
+      toast.success("QR Code rotated and synchronized");
+    } catch (error) {
+      console.error("Rotation error:", error);
+      toast.error("Telemetry error: QR rotation failed");
     }
   };
 
   useEffect(() => {
     if (deptId) {
       fetchData();
-      generateToken();
     }
   }, [deptId]);
 
@@ -202,7 +222,7 @@ export default function ManagerAttendancePage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={generateToken}
+                    onClick={rotateQR}
                     className="gap-2"
                   >
                     <RefreshCw size={14} /> Refresh QR Code

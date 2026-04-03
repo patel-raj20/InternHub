@@ -103,6 +103,7 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">Status</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">Joining Date</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">End Date</TableHead>
+                <TableHead className="font-black uppercase tracking-widest text-[10px]">Performance</TableHead>
                 <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">Actions</TableHead>
               </>
             )}
@@ -219,7 +220,21 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
                   <TableCell className="text-[10px] font-black text-muted-foreground">
                     {intern.end_date ? new Date(intern.end_date).toLocaleDateString() : "Present"}
                   </TableCell>
-                                    <TableCell className="text-right">
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-1 rounded-md bg-orange-500/10 border border-orange-500/20">
+                          <CheckCircle2 size={10} className="text-orange-500" />
+                        </div>
+                        <span className="text-[11px] font-black tracking-tight">{intern.total_points || 0} pts</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 opacity-60">
+                        <TrendingUp size={10} className="text-primary" />
+                        <span className="text-[9px] font-bold uppercase tracking-tighter">Streak: {intern.streak || 0}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`${mode === 'SUPER_ADMIN' ? '/super-admin' : '/admin'}/interns/${intern.id}`}>
                         <Button variant="outline" size="sm" className="h-8 w-8 p-0 border-primary/10 hover:bg-primary/5">

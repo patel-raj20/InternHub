@@ -1,4 +1,4 @@
-import { client } from "@/lib/apollo-client";
+import { client } from "../apollo-client";
 import * as Queries from "@/graphql/queries";
 import * as Mutations from "@/graphql/mutations";
 import { Intern, Department, Organization, AttendanceSettings, AttendanceRecord } from "@/lib/types";
@@ -96,15 +96,8 @@ class GraphQLService {
       throw new Error("Department admin must belong to a department");
     }
 
-    let token = "";
-    if (formData.invite_token) {
-      token = formData.invite_token;
-    } else {
-      token = bcrypt.hashSync(formData.email, 10);
-    }
-
-
-    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+    const rawPass = formData.password || Math.random().toString(36).slice(-8);
+    const passHash = bcrypt.hashSync(rawPass, 10);
 
     const internData: any = {
       organization_id: organizationId,
@@ -144,10 +137,10 @@ class GraphQLService {
           phone: formData.phone,
           role: "INTERN",
           status: formData.status || "ACTIVE",
-          invite_status: "PENDING",
-          invite_token: token,
-          invite_expires_at: expiresAt,
-          password_hash: formData.password ? bcrypt.hashSync(formData.password, 10) : "",
+          invite_status: "ACCEPTED",
+          invite_token: null,
+          invite_expires_at: null,
+          password_hash: passHash,
           created_by: formData.createdBy || null
         }
       };
@@ -168,7 +161,7 @@ class GraphQLService {
           body: JSON.stringify({
             email: formData.email,
             firstName: first_name,
-            token: token
+            rawPassword: rawPass
           })
         });
       } catch (err) {
@@ -220,37 +213,6 @@ class GraphQLService {
     return data;
   }
 
-  // async getInterns(orgId: string, deptId?: string) {
-  //     const where: any = { organization_id: { _eq: orgId } };
-  //     if (deptId) {
-  //       where.user = { department_id: { _eq: deptId } };
-  //     }
-  //     const { data } = await client.query({
-  //       query: Queries.GET_INTERNS,
-  //       variables: { where },
-  //       fetchPolicy: "network-only",
-  //     });
-  //     return data?.interns || [];
-  //   }
-
-  // async getInternByUserId(userId: string) {
-  //   const { data } = await client.query({
-  //     query: Queries.GET_INTERNS,
-  //     variables: { where: { user_id: { _eq: userId } } },
-  //     fetchPolicy: "network-only",
-  //   });
-  //   return data?.interns?.[0] || null;
-  // }
-
-  // async getInternById(id: string) {
-  //   const { data } = await client.query({
-  //     query: Queries.GET_INTERN_BY_ID,
-  //     variables: { id },
-  //     fetchPolicy: "network-only",
-  //   });
-  //   return data?.interns_by_pk || null;
-  // }
-
   // --- Departments ---
 
   async getDepartments(orgId: string): Promise<Department[]> {
@@ -279,6 +241,9 @@ class GraphQLService {
   }
 
   async addDepartment(formData: any) {
+    const rawPass = formData.adminPassword || Math.random().toString(36).slice(-8);
+    const passHash = bcrypt.hashSync(rawPass, 10);
+    
     const deptData: any = {
       organization_id: formData.organization_id,
       name: formData.name,
@@ -290,7 +255,7 @@ class GraphQLService {
             first_name: formData.adminFirstName || "Dept",
             last_name: formData.adminLastName || "Admin",
             email: formData.adminEmail,
-            password_hash: formData.adminPassword ? bcrypt.hashSync(formData.adminPassword, 10) : "hashed_pass",
+            password_hash: passHash,
             role: "DEPT_ADMIN",
             status: "ACTIVE",
             invite_status: "ACCEPTED",
@@ -304,6 +269,23 @@ class GraphQLService {
       mutation: Mutations.INSERT_DEPARTMENT,
       variables: { object: deptData },
     });
+    
+    if (formData.adminEmail) {
+      try {
+        await fetch('/api/invite/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.adminEmail,
+            firstName: formData.adminFirstName || "Dept",
+            rawPassword: rawPass
+          })
+        });
+      } catch (err) {
+        console.error("Failed to trigger welcome email", err);
+      }
+    }
+    
     return data;
   }
 
@@ -334,6 +316,9 @@ class GraphQLService {
   }
 
   async addOrganization(formData: any) {
+    const rawPass = formData.adminPassword || Math.random().toString(36).slice(-8);
+    const passHash = bcrypt.hashSync(rawPass, 10);
+    
     const orgData: any = {
       name: formData.name,
       description: formData.description,
@@ -346,7 +331,7 @@ class GraphQLService {
             first_name: formData.adminFirstName,
             last_name: formData.adminLastName,
             email: formData.adminEmail,
-            password_hash: formData.adminPassword ? bcrypt.hashSync(formData.adminPassword, 10) : "",
+            password_hash: passHash,
             role: "SUPER_ADMIN",
             status: "ACTIVE",
             invite_status: "ACCEPTED",
@@ -360,6 +345,23 @@ class GraphQLService {
       mutation: Mutations.INSERT_ORGANIZATION,
       variables: { object: orgData },
     });
+    
+    if (formData.adminEmail) {
+      try {
+        await fetch('/api/invite/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.adminEmail,
+            firstName: formData.adminFirstName || "Super",
+            rawPassword: rawPass
+          })
+        });
+      } catch (err) {
+        console.error("Failed to trigger welcome email", err);
+      }
+    }
+    
     return data;
   }
 
@@ -386,6 +388,7 @@ class GraphQLService {
     });
     return data;
   }
+
   async getGlobalStats() {
     const { data } = await client.query<any>({
       query: Queries.GET_GLOBAL_STATS,
@@ -406,6 +409,7 @@ class GraphQLService {
     });
     return (data?.departments || []).map((dept: any) => ({
       ...dept,
+      head: dept.users?.[0] || null,
       intern_count: dept.users_aggregate?.aggregate?.count || 0,
     }));
   }
@@ -424,7 +428,7 @@ class GraphQLService {
   async upsertAttendanceSettings(settings: Partial<AttendanceSettings>) {
     const { data } = await client.mutate<{ insert_attendance_settings_one: AttendanceSettings }>({
       mutation: Mutations.UPSERT_ATTENDANCE_SETTINGS,
-      variables: { object: settings },
+      variables: { object: removeTypename(settings) },
     });
     return data?.insert_attendance_settings_one;
   }
@@ -478,7 +482,7 @@ class GraphQLService {
 
   async getBadges() {
     const { data } = await client.query<any>({
-      query: Mutations.GET_BADGES_QUERY,
+      query: Queries.GET_BADGES,
       fetchPolicy: "network-only",
     });
     return data?.badges || [];
@@ -496,15 +500,6 @@ class GraphQLService {
   }
 
   // --- Tasks & Gamification ---
-
-  async getTasks(internId: string) {
-    const { data } = await client.query<any>({
-      query: Queries.GET_TASKS,
-      variables: { intern_id: internId },
-      fetchPolicy: "network-only",
-    });
-    return data?.tasks || [];
-  }
 
   async getTaskById(id: string) {
     const { data } = await client.query<any>({
@@ -534,14 +529,6 @@ class GraphQLService {
     return data;
   }
 
-  // async getInternTasks(internId: string) {
-  //   const { data } = await client.query<any>({
-  //     query: Queries.GET_TASKS,
-  //     variables: { intern_id: internId },
-  //     fetchPolicy: "network-only",
-  //   });
-  //   return data?.tasks || [];
-  // }
 
   async getAllTasks(where: any = {}) {
     const { data } = await client.query<any>({
@@ -567,6 +554,142 @@ class GraphQLService {
       fetchPolicy: "network-only",
     });
     return data?.interns || [];
+  }
+
+  // --- Departmental Tasks ---
+
+  async getDepartmentTasksForSuperAdmin(organization_id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_DEPARTMENT_TASKS_FOR_SUPERADMIN,
+      variables: { organization_id },
+      fetchPolicy: "network-only",
+    });
+    return data?.department_tasks || [];
+  }
+
+  async getDepartmentTasksForAdmin(department_id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_DEPARTMENT_TASKS_FOR_ADMIN,
+      variables: { department_id },
+      fetchPolicy: "network-only",
+    });
+    return data?.department_tasks || [];
+  }
+
+  async getDepartmentTaskById(id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_DEPARTMENT_TASK_BY_ID,
+      variables: { id },
+      fetchPolicy: "network-only",
+    });
+    return data?.department_tasks_by_pk || null;
+  }
+
+  async insertDepartmentTask(object: any) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.INSERT_DEPARTMENT_TASK,
+      variables: { object: removeTypename(object) },
+    });
+    return data?.insert_department_tasks_one;
+  }
+
+  async batchInsertDepartmentTasks(taskObjects: any[]) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.INSERT_DEPARTMENT_TASKS,
+      variables: { objects: taskObjects.map(removeTypename) },
+    });
+    return data?.insert_department_tasks;
+  }
+
+  async getSubtasksProgress(parent_id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_SUBTASKS_PROGRESS,
+      variables: { parent_id },
+      fetchPolicy: "network-only",
+    });
+    return data?.tasks || [];
+  }
+
+  async getInternTasks(intern_id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_INTERN_TASKS,
+      variables: { intern_id },
+      fetchPolicy: "network-only",
+    });
+    return data?.tasks || [];
+  }
+
+  async updateDepartmentTaskStatus(id: string, status: string) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.UPDATE_DEPARTMENT_TASK_STATUS,
+      variables: { id, status },
+    });
+    return data?.update_department_tasks_by_pk;
+  }
+
+  async deleteDepartmentTask(id: string) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.DELETE_DEPARTMENT_TASK,
+      variables: { id },
+    });
+    return data?.delete_department_tasks_by_pk;
+  }
+
+  async getMasterTasks(organization_id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_MASTER_TASKS,
+      variables: { organization_id },
+      fetchPolicy: "network-only",
+    });
+    return data?.master_tasks || [];
+  }
+
+  async getMasterTaskDetail(id: string) {
+    const { data } = await client.query<any>({
+      query: Queries.GET_MASTER_TASK_DETAIL,
+      variables: { id },
+      fetchPolicy: "network-only",
+    });
+    return data?.master_tasks_by_pk;
+  }
+
+  async createMasterTask(object: {
+    organization_id: string;
+    title: string;
+    description: string;
+    deadline: string;
+    created_by: string;
+    department_ids: string[];
+  }) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.INSERT_MASTER_TASK,
+      variables: {
+        object: {
+          organization_id: object.organization_id,
+          title: object.title,
+          description: object.description,
+          deadline: object.deadline,
+          created_by: object.created_by,
+          department_tasks: {
+            data: object.department_ids.map((department_id) => ({
+              department_id,
+              organization_id: object.organization_id,
+              created_by: object.created_by,
+              status: "PENDING",
+            })),
+          },
+        },
+      },
+    });
+    return data?.insert_master_tasks_one;
+  }
+
+  async deleteMasterTask(id: string) {
+    const { data } = await client.mutate<any>({
+      mutation: Mutations.DELETE_MASTER_TASK,
+      variables: { id },
+    });
+    return data?.delete_master_tasks_by_pk;
   }
 }
 

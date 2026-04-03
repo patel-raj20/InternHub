@@ -170,6 +170,15 @@ export default function LoginPage() {
                                     </button>
                                 </div>
                             </motion.div>
+                            <motion.div variants={itemVariants} className="text-right mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => router.push("/login/forgot-password")}
+                                    className="text-[10px] font-black uppercase text-primary/70 hover:text-primary transition-colors tracking-widest"
+                                >
+                                    Forgot access key?
+                                </button>
+                            </motion.div>
                         </div>
 
                         <motion.div variants={itemVariants}>

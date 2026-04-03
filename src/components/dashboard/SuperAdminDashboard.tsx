@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import DepartmentStatusExplorer from "./DepartmentStatusExplorer";
+import DepartmentPerformanceLeaderboard from "./DepartmentPerformanceLeaderboard";
 
 // --- Utility: cn ---
 function cn(...inputs: ClassValue[]) {
@@ -71,7 +72,10 @@ export default function SuperAdminDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        if (role === "DEVELOPER") {
+        let activeOrgId = organization_id;
+        
+        // 1. Fetch Organizations and setup activeOrgId
+        if (role === 'DEVELOPER') {
           const [orgs, depts, ints, globalStats] = await Promise.all([
             graphqlService.getOrganizations(),
             graphqlService.getAllDepartments(),
@@ -83,25 +87,36 @@ export default function SuperAdminDashboard() {
           setInterns(ints);
           setStats({
             ...globalStats,
-            completedInterns: ints.filter(i => (i as any).user?.status === 'COMPLETED').length
+            completedInterns: ints.filter(i => (i as any).user?.status?.toLowerCase() === 'completed').length
           });
-        } else if (role === "SUPER_ADMIN" && organization_id) {
-          const [org, depts, ints] = await Promise.all([
-            graphqlService.getOrganizationById(organization_id),
-            graphqlService.getDepartments(organization_id),
-            graphqlService.getInterns(organization_id)
-          ]);
-          setOrganizations([org]);
-          setDepartments(depts);
-          setInterns(ints);
-          // Calculate stats for Super Admin
-          setStats({
-            organizations: 1,
-            departments: depts.length,
-            interns: ints.length,
-            activeInterns: ints.filter(i => (i as any).user?.status === 'ACTIVE').length,
-            completedInterns: ints.filter(i => (i as any).user?.status === 'COMPLETED').length
-          });
+        } else if (role === 'SUPER_ADMIN') {
+          // Fallback fetch of orgs if organization_id is missing
+          let currentOrgId = organization_id;
+          let currentOrgs = organizations;
+
+          if (!currentOrgId || currentOrgs.length === 0) {
+            const orgs = await graphqlService.getOrganizations();
+            setOrganizations(orgs);
+            currentOrgId = currentOrgId || orgs[0]?.id;
+          }
+
+          if (currentOrgId) {
+            const [org, depts, ints] = await Promise.all([
+              graphqlService.getOrganizationById(currentOrgId),
+              graphqlService.getDepartments(currentOrgId),
+              graphqlService.getInterns(currentOrgId)
+            ]);
+            setOrganizations([org]);
+            setDepartments(depts);
+            setInterns(ints);
+            setStats({
+              organizations: 1,
+              departments: depts.length,
+              interns: ints.length,
+              activeInterns: ints.filter(i => (i as any).user?.status?.toLowerCase() === 'active').length,
+              completedInterns: ints.filter(i => (i as any).user?.status?.toLowerCase() === 'completed').length
+            });
+          }
         }
       } catch (error) {
         console.error("Dashboard data fetch error:", error);
@@ -242,16 +257,22 @@ export default function SuperAdminDashboard() {
           ))}
        </div>
 
-       {/* 2. MAIN GRID (LEFT: 65% | RIGHT: 35%) */}
-       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mt-8">
+       {/* 2. MAIN GRID (LEFT: 70% | RIGHT: 30% approx) */}
+       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
           
-           {/* LEFT COLUMN (65%) */}
+           {/* LEFT COLUMN (Analytics Stack) */}
           <div className="lg:col-span-8 space-y-8">
              
              {/* A. Department Status Explorer */}
              <DepartmentStatusExplorer />
 
-             {/* B. Organization Table (Developer Only) */}
+             {/* B. Performance Analytics (Graphical Leaderboard) */}
+             <DepartmentPerformanceLeaderboard 
+               departments={departments} 
+               interns={interns} 
+             />
+
+             {/* C. Organization Table (Developer Only) */}
              {isDev && (
                <Card className="border-border/50 overflow-hidden shadow-xl glass-card">
                   <CardHeader className="flex flex-row items-center justify-between p-8">
@@ -307,13 +328,6 @@ export default function SuperAdminDashboard() {
                                   </td>
                                </tr>
                              ))}
-                             {paginatedOrgs.length === 0 && (
-                                 <tr>
-                                    <td colSpan={4} className="px-8 py-24 text-center">
-                                       <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20">No organizations matching telemetry</p>
-                                    </td>
-                                 </tr>
-                             )}
                           </tbody>
                        </table>
                     </div>
@@ -342,11 +356,9 @@ export default function SuperAdminDashboard() {
                   </CardContent>
                </Card>
              )}
-
-
           </div>
 
-          {/* RIGHT COLUMN (35%) */}
+          {/* RIGHT COLUMN (Activity Feed) */}
           <div className="lg:col-span-4 space-y-8">
              
              {/* D. Recent Activity Feed */}
@@ -359,7 +371,7 @@ export default function SuperAdminDashboard() {
                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Live platform events</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                  <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
                       {recentActivities.map((act, i) => (
                         <div key={i} className="flex gap-4 group transition-all duration-300">
                            <div className="flex flex-col items-center gap-1 mt-1.5">
@@ -390,7 +402,6 @@ export default function SuperAdminDashboard() {
                   </div>
                 </CardContent>
              </Card>
-
           </div>
        </div>
 

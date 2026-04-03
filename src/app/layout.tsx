@@ -14,8 +14,8 @@ const font = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InternHub | Stovest Premium Dashboard",
-  description: "High-end intern management system with Glassmorphism",
+  title: "InternHub  ",
+  description: "InternHub is a platform for managing interns.",
 };
 
 export default function RootLayout({
@@ -32,13 +32,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-            <MeshBackground />
-            <AppProviders>
-              <Toaster />
-              <ContentLayout>
-                {children}
-              </ContentLayout>
-            </AppProviders>
+          <MeshBackground />
+          <AppProviders>
+            <Toaster />
+            <ContentLayout>
+              {children}
+            </ContentLayout>
+          </AppProviders>
         </ThemeProvider>
       </body>
     </html>

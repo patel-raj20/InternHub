@@ -185,18 +185,6 @@ export const AWARD_BADGE = gql`
   }
 `;
 
-export const GET_BADGES_QUERY = gql`
-  query GetBadges {
-    badges {
-      id
-      name
-      icon
-      description
-      milestone_days
-    }
-  }
-`;
-
 export const BATCH_ATTENDANCE_UPDATE = gql`
   mutation BatchAttendanceUpdate(
     $internId: uuid!, 
@@ -267,8 +255,108 @@ export const INSERT_TASKS = gql`
       returning {
         id
         intern_id
+        parent_dept_task_id
         title
       }
+    }
+  }
+`;
+
+export const SET_RESET_OTP = gql`
+  mutation SetResetOTP($email: String!, $otp: String!, $expires_at: timestamp!) {
+    update_users(
+      where: { email: { _eq: $email } },
+      _set: { reset_otp: $otp, reset_otp_expires_at: $expires_at }
+    ) {
+      affected_rows
+      returning {
+        first_name
+        last_name
+      }
+    }
+  }
+`;
+
+export const RESET_PASSWORD = gql`
+  mutation ResetPassword($email: String!, $password_hash: String!) {
+    update_users(
+      where: { email: { _eq: $email } },
+      _set: { password_hash: $password_hash, reset_otp: null, reset_otp_expires_at: null }
+    ) {
+      affected_rows
+    }
+  }
+`;
+
+export const CLEAR_RESET_OTP = gql`
+  mutation ClearResetOTP($email: String!) {
+    update_users(
+      where: { email: { _eq: $email } },
+      _set: { reset_otp: null, reset_otp_expires_at: null }
+    ) {
+      affected_rows
+    }
+  }
+`;
+
+export const UPDATE_DEPARTMENT_TASK_STATUS = gql`
+  mutation UpdateDepartmentTaskStatus($id: uuid!, $status: String!) {
+    update_department_tasks_by_pk(pk_columns: { id: $id }, _set: { status: $status }) {
+      id
+      status
+    }
+  }
+`;
+
+export const INSERT_DEPARTMENT_TASK = gql`
+  mutation InsertDepartmentTask($object: department_tasks_insert_input!) {
+    insert_department_tasks_one(object: $object) {
+      id
+      title
+    }
+  }
+`;
+
+export const INSERT_DEPARTMENT_TASKS = gql`
+  mutation InsertDepartmentTasks($objects: [department_tasks_insert_input!]!) {
+    insert_department_tasks(objects: $objects) {
+      affected_rows
+      returning {
+        id
+        title
+      }
+    }
+  }
+`;
+
+export const DELETE_DEPARTMENT_TASK = gql`
+  mutation DeleteDepartmentTask($id: uuid!) {
+    delete_department_tasks_by_pk(id: $id) {
+      id
+      title
+    }
+  }
+`;
+
+export const INSERT_MASTER_TASK = gql`
+  mutation InsertMasterTask($object: master_tasks_insert_input!) {
+    insert_master_tasks_one(object: $object) {
+      id
+      title
+      department_tasks {
+        id
+        department_id
+        status
+      }
+    }
+  }
+`;
+
+export const DELETE_MASTER_TASK = gql`
+  mutation DeleteMasterTask($id: uuid!) {
+    delete_master_tasks_by_pk(id: $id) {
+      id
+      title
     }
   }
 `;

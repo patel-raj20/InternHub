@@ -9,11 +9,13 @@ import { ReactNode, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { setRole, setUser } from "@/store/slices/userSlice";
+import { cn } from "@/lib/utils";
 
 export function ContentLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const isLoginPage = pathname === "/login";
+  const isLoginPage = pathname.startsWith("/login");
+  const { sidebarOpen, sidebarCollapsed } = useSelector((state: RootState) => state.ui);
   const [mounted, setMounted] = useState(false);
   const { data: session, status } = useSession();
 
@@ -49,7 +51,12 @@ export function ContentLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen relative overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex flex-1 flex-col lg:pl-[260px] transition-all duration-500">
+      <div 
+        className={cn(
+          "flex flex-1 flex-col transition-all duration-500",
+          sidebarCollapsed ? "lg:pl-[80px]" : "lg:pl-[260px]"
+        )}
+      >
         <Navbar />
         <main className="flex-1 p-6 lg:p-10">
           <PageTransition>{children}</PageTransition>

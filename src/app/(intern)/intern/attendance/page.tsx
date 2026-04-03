@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Html5Qrcode } from "html5-qrcode";
+import { QRCodeSVG } from "qrcode.react";
 import { graphqlService } from "@/lib/services/graphql-service";
 import { AttendanceRecord } from "@/lib/types";
 import {
@@ -23,7 +24,8 @@ import {
   Clock,
   Navigation,
   CalendarCheck,
-  Camera
+  Camera,
+  QrCode
 } from "lucide-react";
 import { getLocalDateString } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ export default function InternAttendancePage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
+  const [settings, setSettings] = useState<any>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   const internId = session?.user?.id;
@@ -58,8 +61,12 @@ export default function InternAttendancePage() {
       setLoading(true);
       const intern = await graphqlService.getInternByUserId(session.user.id);
       if (intern) {
-        const records = await graphqlService.getInternAttendance(intern.id);
+        const [records, settingsData] = await Promise.all([
+          graphqlService.getInternAttendance(intern.id),
+          graphqlService.getAttendanceSettings(intern.user.department_id)
+        ]);
         setHistory(records);
+        setSettings(settingsData);
       }
     } catch (error) {
       console.error("Error fetching attendance history:", error);
@@ -67,6 +74,31 @@ export default function InternAttendancePage() {
       setLoading(false);
     }
   };
+
+  // Add polling for live QR updates
+  useEffect(() => {
+    if (!session?.user?.department_id) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const settingsData = await graphqlService.getAttendanceSettings(session.user.department_id);
+        setSettings(settingsData);
+      } catch (err) {
+        console.warn("Polling failed:", err);
+      }
+    }, 3000); // 3s polling for near real-time synchronization
+
+    return () => clearInterval(interval);
+  }, [session?.user?.department_id]);
+
+  const qrToken = (() => {
+    if (!session?.user?.department_id || !settings) return "";
+    const today = getLocalDateString();
+    const version = settings.updated_at 
+      ? new Date(settings.updated_at).getTime().toString().slice(-6) 
+      : "000000";
+    return `ATT|${session.user.department_id}|${today}|${version}`;
+  })();
 
   const startScanner = async () => {
     setResult(null);
@@ -167,11 +199,45 @@ export default function InternAttendancePage() {
   return (
     <div className="container mx-auto p-4 max-w-2xl space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Mark Attendance</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Mark Attendance</h1>
+          {settings && (
+            <div className="flex items-center gap-1.5 text-[10px] bg-green-500/10 text-green-600 px-2 py-1 rounded-full font-black animate-pulse">
+              <CheckCircle2 size={12} /> ALIVE
+            </div>
+          )}
+        </div>
         <p className="text-muted-foreground">
-          Scan the QR code provided by your manager to mark your presence for today.
+          Display your department QR code or use the scanner to verify your office presence.
         </p>
       </div>
+
+      {/* QR Display Card (New) */}
+      <Card className="glass-card overflow-hidden border-2 border-primary/20">
+        <CardHeader className="bg-primary/5 border-b border-primary/10">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <QrCode className="w-5 h-5" /> Your Department QR
+          </CardTitle>
+          <CardDescription>Scan this with your mobile device to mark entry.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-8 gap-4">
+          {qrToken ? (
+            <div className="p-4 bg-white rounded-xl shadow-xl">
+               <QRCodeSVG value={qrToken} size={200} level="H" includeMargin={true} />
+            </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center opacity-20 italic">
+               Waiting for department sync...
+            </div>
+          )}
+          <div className="text-center">
+             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                Rotating Daily Token | Verified Geofence
+             </p>
+             <p className="text-xs font-mono mt-1 opacity-20">{qrToken}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         {!scanning && !result && (

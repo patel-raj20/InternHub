@@ -1,6 +1,7 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
+import { ApolloClient, InMemoryCache, createHttpLink, ApolloLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { getSession } from "next-auth/react";
+import { sanitizeData } from "@/lib/utils/security";
 
 const httpLink = createHttpLink({
   uri: process.env.NEXT_PUBLIC_HASURA_GRAPHQL_ENDPOINT || "http://localhost:8080/v1/graphql",
@@ -22,8 +23,15 @@ const authLink = setContext(async (_, { headers }) => {
   };
 });
 
+const securityLink = new ApolloLink((operation, forward) => {
+  if (operation.variables) {
+    operation.variables = sanitizeData(operation.variables);
+  }
+  return forward(operation);
+});
+
 export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: ApolloLink.from([securityLink, authLink, httpLink]),
   cache: new InMemoryCache(),
 });
 

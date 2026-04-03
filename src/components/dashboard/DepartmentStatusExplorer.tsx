@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector
 } from 'recharts';
-import { Building2, Users, Mail, User } from 'lucide-react';
+import { Building2, Users, Mail, User, PieChart as PieChartIcon } from 'lucide-react';
 import { graphqlService } from "@/lib/services/graphql-service";
 import { Organization, Department, Intern } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -103,9 +103,9 @@ export default function DepartmentStatusExplorer() {
           const deptInterns = interns.filter(i => i.user?.department_id === dept.id);
           return {
             ...dept,
-            active: deptInterns.filter(i => i.user?.status === 'ACTIVE').length,
-            completed: deptInterns.filter(i => i.user?.status === 'COMPLETED').length,
-            pending: (deptInterns.length - deptInterns.filter(i => ['ACTIVE', 'COMPLETED'].includes(i.user?.status)).length) || 0
+            active: deptInterns.filter(i => i.user?.status?.toLowerCase() === 'active').length,
+            completed: deptInterns.filter(i => i.user?.status?.toLowerCase() === 'completed').length,
+            pending: (deptInterns.length - deptInterns.filter(i => ['active', 'completed'].includes(i.user?.status?.toLowerCase())).length) || 0
           };
         }) as DeptData[];
 
@@ -195,7 +195,7 @@ export default function DepartmentStatusExplorer() {
                     outerRadius={90}
                     stroke="none"
                     onClick={(_, index) => setActiveDeptIndex(index)}
-                    activeIndex={activeDeptIndex === null ? undefined : activeDeptIndex}
+                    activeIndex={activeDeptIndex!}
                     activeShape={renderActiveShape}
                   >
                     {departments.map((_, index) => (
@@ -302,7 +302,7 @@ export default function DepartmentStatusExplorer() {
           ) : (
             <div className="text-center space-y-4 opacity-30">
               <div className="w-16 h-16 rounded-full bg-white/5 mx-auto flex items-center justify-center border border-white/5">
-                <PieChart size={24} />
+                <PieChartIcon size={24} />
               </div>
               <p className="text-[10px] font-black uppercase tracking-widest max-w-[150px] mx-auto leading-relaxed">
                 Select a department from the pie chart to view breakdown
