@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 export default function CreateDepartmentPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const { organization_id } = useSelector((state: RootState) => state.user);
+  const { organization_id, id: currentUserId } = useSelector((state: RootState) => state.user);
 
   const handleSubmit = async (data: { name: string }) => {
     if (!organization_id) {
@@ -23,8 +23,9 @@ export default function CreateDepartmentPage() {
     setIsLoading(true);
     try {
       await graphqlService.addDepartment({
-        name: data.name,
+        ...data,
         organization_id,
+        createdBy: currentUserId,
         description: "", // Can be extended in form
       });
       toast.success("Department initialized successfully!");

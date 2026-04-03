@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server";
 import { transporter } from "@/lib/mailer";
+import { getWelcomeEmailTemplate } from "@/lib/emails/templates";
 
 export async function POST(req: Request) {
   try {
-    const { email, firstName, token } = await req.json();
+    const { email, firstName, token, rawPassword } = await req.json();
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invite?token=${token}`;
+    const loginLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
 
     await transporter.sendMail({
-      from: '"InternHub" <no-reply@internhub.com>',
+      from: '"InternHub Security" <no-reply@internhub.com>',
       to: email,
-      subject: "You're invited to InternHub 🎉",
-      html: `
-        <h2>Welcome ${firstName}</h2>
-        <p>Click below to set your password:</p>
-        <a href="${inviteLink}">Set Password</a>
-        <p>This link expires in 12 hours</p>
-      `,
+      subject: "Welcome to InternHub! Your Credentials Inside",
+      html: getWelcomeEmailTemplate(firstName, email, rawPassword || "Provided separately", loginLink),
     });
 
     return NextResponse.json({ success: true });

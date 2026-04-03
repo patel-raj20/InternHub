@@ -4,18 +4,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector
 } from 'recharts';
-import { Building2, Users, Mail, User } from 'lucide-react';
+import { Building2, Users, Mail, User, PieChart as PieChartIcon } from 'lucide-react';
 import { graphqlService } from "@/lib/services/graphql-service";
 import { Organization, Department, Intern } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import toast from "react-hot-toast";
 
 const SLICE_COLORS = ['#00D4FF','#7C3AED','#10B981','#F59E0B','#EF4444','#EC4899'];
@@ -68,8 +63,17 @@ export default function DepartmentStatusExplorer() {
   const [activeDeptIndex, setActiveDeptIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const { role, organization_id } = useSelector((state: RootState) => state.user);
+  const isDev = role === "DEVELOPER";
+
   useEffect(() => {
     setMounted(true);
+    
+    if (!isDev && organization_id) {
+       setSelectedOrgId(organization_id);
+       return;
+    }
+
     const fetchOrgs = async () => {
       try {
         const orgs = await graphqlService.getOrganizations();
@@ -80,7 +84,7 @@ export default function DepartmentStatusExplorer() {
       }
     };
     fetchOrgs();
-  }, []);
+  }, [isDev, organization_id]);
 
   useEffect(() => {
     if (!selectedOrgId) return;
@@ -99,13 +103,13 @@ export default function DepartmentStatusExplorer() {
           const deptInterns = interns.filter(i => i.user?.department_id === dept.id);
           return {
             ...dept,
-            active: deptInterns.filter(i => i.user?.status === 'ACTIVE').length,
-            completed: deptInterns.filter(i => i.user?.status === 'COMPLETED').length,
-            pending: (deptInterns.length - deptInterns.filter(i => ['ACTIVE', 'COMPLETED'].includes(i.user?.status)).length) || 0
+            active: deptInterns.filter(i => i.user?.status?.toLowerCase() === 'active').length,
+            completed: deptInterns.filter(i => i.user?.status?.toLowerCase() === 'completed').length,
+            pending: (deptInterns.length - deptInterns.filter(i => ['active', 'completed'].includes(i.user?.status?.toLowerCase())).length) || 0
           };
         }) as DeptData[];
 
-        setDepartments(enrichedDepts.filter(d => d.intern_count > 0));
+        setDepartments(enrichedDepts);
       } catch (error) {
         console.error("Failed to fetch department stats:", error);
         toast.error("Error loading departmental data");
@@ -133,7 +137,7 @@ export default function DepartmentStatusExplorer() {
 
   return (
     <div className={cn(
-      "border rounded-[1.5rem] p-6 backdrop-blur-xl shadow-2xl transition-all duration-300",
+      "border rounded-[1.5rem] p-6 backdrop-blur-xl shadow-2xl transition-all duration-300 h-full flex flex-col",
       isDark 
         ? "bg-white/[0.04] border-white/[0.08]" 
         : "bg-white border-slate-200 shadow-xl"
@@ -147,45 +151,15 @@ export default function DepartmentStatusExplorer() {
           </div>
           <div>
             <h3 className="text-lg font-black tracking-tight leading-none">Status Explorer</h3>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Lifecycle analytics per department</p>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
+              {isDev ? "Lifecycle analytics per department" : "Your organization's lifecycle analytics"}
+            </p>
           </div>
         </div>
 
-        <div className="w-full sm:w-[280px] relative">
-          <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 block mb-1.5 ml-1">Select Organization</label>
-          <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-            <SelectTrigger className={cn(
-              "w-full rounded-xl h-11 shadow-md transition-all border",
-              isDark 
-                ? "bg-[#111827]/50 border-white/10 text-white" 
-                : "bg-white border-slate-200 text-slate-900"
-            )}>
-              <SelectValue placeholder="Select Organization" />
-            </SelectTrigger>
-            <SelectContent className={cn(
-               "border shadow-2xl backdrop-blur-xl",
-               isDark 
-                 ? "bg-[#111827] border-white/10" 
-                 : "bg-white border-slate-100"
-            )}>
-              {organizations.map(org => (
-                <SelectItem 
-                  key={org.id} 
-                  value={org.id} 
-                  className={cn(
-                    "text-xs font-bold transition-colors",
-                    isDark ? "text-white" : "text-slate-900"
-                  )}
-                >
-                  {org.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
         
         {/* LEFT PANEL: Pie Chart */}
         <div className="lg:col-span-12 xl:col-span-5 flex flex-col">
@@ -221,7 +195,7 @@ export default function DepartmentStatusExplorer() {
                     outerRadius={90}
                     stroke="none"
                     onClick={(_, index) => setActiveDeptIndex(index)}
-                    activeIndex={activeDeptIndex === null ? undefined : activeDeptIndex}
+                    activeIndex={activeDeptIndex!}
                     activeShape={renderActiveShape}
                   >
                     {departments.map((_, index) => (
@@ -328,7 +302,7 @@ export default function DepartmentStatusExplorer() {
           ) : (
             <div className="text-center space-y-4 opacity-30">
               <div className="w-16 h-16 rounded-full bg-white/5 mx-auto flex items-center justify-center border border-white/5">
-                <PieChart size={24} />
+                <PieChartIcon size={24} />
               </div>
               <p className="text-[10px] font-black uppercase tracking-widest max-w-[150px] mx-auto leading-relaxed">
                 Select a department from the pie chart to view breakdown

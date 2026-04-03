@@ -8,12 +8,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from "@/store/slices/uiSlice";
 import { setRole } from "@/store/slices/userSlice";
 import { RootState } from "@/store";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const dispatch = useDispatch();
   const { name, role } = useSelector((state: RootState) => state.user);
+  const isOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
   useEffect(() => {
     setMounted(true);
@@ -31,12 +33,20 @@ export function Navbar() {
     <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b bg-background/60 px-4 backdrop-blur-md lg:px-8 border-border/50">
       <div className="flex w-full items-center justify-between">
         <div className="flex flex-1 items-center gap-4">
-          <button
-            onClick={() => dispatch(toggleSidebar())}
-            className="lg:hidden p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all rounded-xl"
-          >
-            <Menu size={20} />
-          </button>
+          <AnimatePresence>
+            {!isOpen && (
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                onClick={() => dispatch(toggleSidebar())}
+                className="lg:hidden p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all rounded-xl border border-border/50 bg-background/50 shadow-sm"
+              >
+                <Menu size={20} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Notification and Role toggle removed */}

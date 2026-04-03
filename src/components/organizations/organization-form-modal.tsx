@@ -40,7 +40,7 @@ export function OrganizationFormModal({ isOpen, onClose, onSubmit, initialData }
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="space-y-3">
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">
-            Organization Name
+            Organization Name <span className="text-red-500 ml-1">*</span>
           </label>
           <Input 
             {...register("name", { required: "Name is required" })} 

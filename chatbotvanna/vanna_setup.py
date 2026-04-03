@@ -107,21 +107,31 @@ def _get_env(primary: str, fallback: Optional[str] = None, default: str = "") ->
 
 def connect_to_postgres() -> None:
     """Connect Vanna instance to Postgres."""
-    database_url = os.getenv("DATABASE_URL") or os.getenv("HASURA_GRAPHQL_DATABASE_URL")
-
-    if database_url:
-        parsed = urlparse(database_url)
-        host = parsed.hostname or "localhost"
-        port = parsed.port or 5432
-        dbname = (parsed.path or "").lstrip("/") or "internhub"
-        user = unquote(parsed.username or "postgres")
-        password = unquote(parsed.password or "postgres")
-    else:
-        host = _get_env("POSTGRES_HOST", "DB_HOST", "localhost")
+    # First priority: Individual environment variables for local flexibility
+    host = _get_env("POSTGRES_HOST", "DB_HOST")
+    
+    if host:
         port = int(_get_env("POSTGRES_PORT", "DB_PORT", "5432") or "5432")
         dbname = _get_env("POSTGRES_DB", "DB_NAME", "internhub")
         user = _get_env("POSTGRES_USER", "DB_USER", "postgres")
         password = _get_env("POSTGRES_PASSWORD", "DB_PASSWORD", "postgres")
+    else:
+        # Second priority: full connection URL (often from Docker/Root .env)
+        database_url = os.getenv("DATABASE_URL") or os.getenv("HASURA_GRAPHQL_DATABASE_URL")
+        if database_url:
+            parsed = urlparse(database_url)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 5432
+            dbname = (parsed.path or "").lstrip("/") or "internhub"
+            user = unquote(parsed.username or "postgres")
+            password = unquote(parsed.password or "postgres")
+        else:
+            # Fallback to defaults
+            host = "localhost"
+            port = 5432
+            dbname = "internhub"
+            user = "postgres"
+            password = "postgres"
 
     logger.info(f"Connecting to Postgres db: {dbname} at {host}:{port}")
     vn.connect_to_postgres(

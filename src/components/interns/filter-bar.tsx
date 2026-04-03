@@ -15,6 +15,12 @@ interface FilterBarProps {
   department?: string;
   onDepartmentChange?: (dept: string) => void;
   departments?: { id: string; name: string }[];
+  degree?: string;
+  onDegreeChange?: (degree: string) => void;
+  degrees?: string[];
+  college?: string;
+  onCollegeChange?: (college: string) => void;
+  colleges?: string[];
 }
 
 export function FilterBar({ 
@@ -22,7 +28,13 @@ export function FilterBar({
   onStatusChange, 
   department, 
   onDepartmentChange, 
-  departments 
+  departments,
+  degree,
+  onDegreeChange,
+  degrees,
+  college,
+  onCollegeChange,
+  colleges
 }: FilterBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -33,7 +45,7 @@ export function FilterBar({
 
       <div className="flex items-center gap-2">
         <Select value={status} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-[140px] h-10 rounded-xl border-border/50 bg-muted/30">
+          <SelectTrigger className="w-[130px] h-10 rounded-xl border-border/50 bg-muted/30">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent className="glass-card">
@@ -48,13 +60,45 @@ export function FilterBar({
       {onDepartmentChange && departments && (
         <div className="flex items-center gap-2">
           <Select value={department} onValueChange={onDepartmentChange}>
-            <SelectTrigger className="w-[180px] h-10 rounded-xl border-border/50 bg-muted/30">
+            <SelectTrigger className="w-[160px] h-10 rounded-xl border-border/50 bg-muted/30">
               <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectContent className="glass-card">
               <SelectItem value="ALL">All Departments</SelectItem>
               {departments.map((d) => (
                 <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {onDegreeChange && degrees && (
+        <div className="flex items-center gap-2">
+          <Select value={degree} onValueChange={onDegreeChange}>
+            <SelectTrigger className="w-[160px] h-10 rounded-xl border-border/50 bg-muted/30">
+              <SelectValue placeholder="Degree" />
+            </SelectTrigger>
+            <SelectContent className="glass-card">
+              <SelectItem value="ALL">All Degrees</SelectItem>
+              {degrees.map((deg) => (
+                <SelectItem key={deg} value={deg}>{deg}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {onCollegeChange && colleges && (
+        <div className="flex items-center gap-2">
+          <Select value={college} onValueChange={onCollegeChange}>
+            <SelectTrigger className="w-[180px] h-10 rounded-xl border-border/50 bg-muted/30">
+              <SelectValue placeholder="College" />
+            </SelectTrigger>
+            <SelectContent className="glass-card">
+              <SelectItem value="ALL">All Colleges</SelectItem>
+              {colleges.map((col) => (
+                <SelectItem key={col} value={col}>{col}</SelectItem>
               ))}
             </SelectContent>
           </Select>

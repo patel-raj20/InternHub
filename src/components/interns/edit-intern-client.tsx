@@ -36,7 +36,22 @@ export default function EditInternClient({ intern, departments }: EditInternClie
   const handleSubmit = async (data: any) => {
     try {
       // Split form data into user and intern changes
-      const { full_name, email, phone, department_id, ...internData } = data;
+      const { 
+        full_name, 
+        email, 
+        phone, 
+        department_id, 
+        status,
+        user, 
+        organization, 
+        redirectPath,
+        id: _id,
+        user_id: _user_id,
+        organization_id: _org_id,
+        created_at: _created_at,
+        updated_at: _updated_at,
+        ...internData 
+      } = data;
       const [first_name, ...lastNameParts] = (full_name || "").split(' ');
       const last_name = lastNameParts.join(' ');
 
@@ -45,7 +60,8 @@ export default function EditInternClient({ intern, departments }: EditInternClie
         last_name, 
         email, 
         phone, 
-        department_id 
+        department_id,
+        status: status
       };
       
       const internChanges = {
@@ -63,11 +79,22 @@ export default function EditInternClient({ intern, departments }: EditInternClie
       );
       
       toast.success("Intern updated successfully");
-      router.push(data.redirectPath || "/super-admin/interns");
+      router.push(data.redirectPath || "/super-admin/reports");
       router.refresh();
     } catch (error) {
       console.error(error);
       toast.error("Failed to update intern");
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString || dateString === "Present") return "";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split('T')[0];
+    } catch {
+      return "";
     }
   };
 
@@ -77,7 +104,11 @@ export default function EditInternClient({ intern, departments }: EditInternClie
     email: intern.user?.email,
     phone: intern.user?.phone,
     department_id: intern.user?.department_id,
-    enrollment_number: intern.id.slice(0, 8).toUpperCase(),
+    status: intern.user?.status,
+    dob: formatDate(intern.dob),
+    joining_date: formatDate(intern.joining_date),
+    end_date: formatDate(intern.end_date),
+    enrollment_number: intern.enrollment_number || intern.id.slice(0, 8).toUpperCase(),
   };
 
   return (

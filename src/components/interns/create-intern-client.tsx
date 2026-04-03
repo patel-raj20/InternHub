@@ -19,7 +19,7 @@ export default function CreateInternPage({
   title?: string
 }) {
   const router = useRouter();
-  const { organization_id } = useSelector((state: RootState) => state.user);
+  const { organization_id, id: currentUserId } = useSelector((state: RootState) => state.user);
   const [internalDepartments, setInternalDepartments] = useState<Department[]>(departments);
 
   useEffect(() => {
@@ -46,6 +46,7 @@ export default function CreateInternPage({
       await graphqlService.addIntern({
         ...formData,
         organization_id,
+        createdBy: currentUserId
       });
       
       toast.success("Intern created successfully!");

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,10 +11,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, ClipboardPlus, CheckSquare, Square, Users } from "lucide-react";
 import { Intern } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { AssignTaskModal } from "@/components/interns/AssignTaskModal";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface InternTableProps {
   data: Intern[];
@@ -24,6 +28,22 @@ interface InternTableProps {
 }
 
 export function InternTable({ data, isLoading, mode, variant = "management", onDelete }: InternTableProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [assignTaskTarget, setAssignTaskTarget] = useState<string[] | null>(null);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === data.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(data.map(i => i.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border/50 overflow-hidden bg-card/30 backdrop-blur-md">
@@ -55,9 +75,17 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
     <div className="rounded-md border overflow-x-auto">
       <Table className="min-w-[1000px]">
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent border-primary/10">
             {variant === "management" ? (
               <>
+                <TableHead className="w-12">
+                   <button 
+                    onClick={toggleSelectAll}
+                    className="p-1 rounded-md hover:bg-primary/10 text-primary transition-colors"
+                   >
+                     {selectedIds.length === data.length && data.length > 0 ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                   </button>
+                </TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">ID</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">Name</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">College</TableHead>
@@ -75,6 +103,7 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">Status</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">Joining Date</TableHead>
                 <TableHead className="font-black uppercase tracking-widest text-[10px]">End Date</TableHead>
+                <TableHead className="font-black uppercase tracking-widest text-[10px]">Performance</TableHead>
                 <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">Actions</TableHead>
               </>
             )}
@@ -82,10 +111,27 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
         </TableHeader>
         <TableBody>
           {data.map((intern) => (
-            <TableRow key={intern.id} className="hover:bg-muted/30 transition-colors">
+            <TableRow 
+              key={intern.id} 
+              className={cn(
+                "hover:bg-muted/30 transition-colors group",
+                selectedIds.includes(intern.id) && "bg-primary/5 hover:bg-primary/10"
+              )}
+            >
               {variant === "management" ? (
                 <>
-                  <TableCell className="font-black tracking-tighter">#{intern.id.slice(0, 8)}</TableCell>
+                  <TableCell>
+                    <button 
+                      onClick={() => toggleSelect(intern.id)}
+                      className={cn(
+                        "p-1 rounded-md transition-colors",
+                        selectedIds.includes(intern.id) ? "text-primary" : "text-muted-foreground/30 hover:text-primary/50"
+                      )}
+                    >
+                      {selectedIds.includes(intern.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
+                  </TableCell>
+                  <TableCell className="font-black tracking-tighter text-muted-foreground/60">#{intern.id.slice(0, 8)}</TableCell>
                   <TableCell className="font-bold">
                     <div>
                       <div className="font-bold">{`${intern.user.first_name} ${intern.user.last_name || ""}`}</div>
@@ -109,10 +155,19 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
                                     <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`${mode === 'SUPER_ADMIN' ? '/super-admin' : '/admin'}/interns/${intern.id}`}>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="w-4 h-4" />
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0 border-primary/10 hover:bg-primary/5">
+                          <Eye className="w-4 h-4 text-primary/60" />
                         </Button>
                       </Link>
+
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 border-orange-500/10 hover:bg-orange-500/5 group/btn"
+                        onClick={() => setAssignTaskTarget([intern.id])}
+                      >
+                        <ClipboardPlus className="w-4 h-4 text-orange-500/60 group-hover/btn:text-orange-500 transition-colors" />
+                      </Button>
                       {mode === "SUPER_ADMIN" && (
                         <>
                           <Link href={`/super-admin/interns/${intern.id}/edit`}>
@@ -165,13 +220,36 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
                   <TableCell className="text-[10px] font-black text-muted-foreground">
                     {intern.end_date ? new Date(intern.end_date).toLocaleDateString() : "Present"}
                   </TableCell>
-                                    <TableCell className="text-right">
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-1 rounded-md bg-orange-500/10 border border-orange-500/20">
+                          <CheckCircle2 size={10} className="text-orange-500" />
+                        </div>
+                        <span className="text-[11px] font-black tracking-tight">{intern.total_points || 0} pts</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 opacity-60">
+                        <TrendingUp size={10} className="text-primary" />
+                        <span className="text-[9px] font-bold uppercase tracking-tighter">Streak: {intern.streak || 0}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`${mode === 'SUPER_ADMIN' ? '/super-admin' : '/admin'}/interns/${intern.id}`}>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="w-4 h-4" />
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0 border-primary/10 hover:bg-primary/5">
+                          <Eye className="w-4 h-4 text-primary/60" />
                         </Button>
                       </Link>
+
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 border-orange-500/10 hover:bg-orange-500/5 group/btn"
+                        onClick={() => setAssignTaskTarget([intern.id])}
+                      >
+                        <ClipboardPlus className="w-4 h-4 text-orange-500/60 group-hover/btn:text-orange-500 transition-colors" />
+                      </Button>
                       {mode === "SUPER_ADMIN" && (
                         <>
                           <Link href={`/super-admin/interns/${intern.id}/edit`}>
@@ -197,6 +275,53 @@ export function InternTable({ data, isLoading, mode, variant = "management", onD
           ))}
         </TableBody>
       </Table>
+
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40"
+          >
+            <div className="flex items-center gap-6 px-6 py-4 rounded-[2rem] bg-foreground text-background shadow-2xl border border-white/10 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest">{selectedIds.length} Selected</p>
+                  <p className="text-[10px] opacity-60 font-bold">Bulk actions available</p>
+                </div>
+              </div>
+              
+              <div className="h-10 w-[1px] bg-white/10" />
+              
+              <Button 
+                onClick={() => setAssignTaskTarget(selectedIds)}
+                className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] tracking-widest px-6 h-11 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/20"
+              >
+                <ClipboardPlus className="w-4 h-4 mr-2" />
+                Assign Bulk Task
+              </Button>
+
+              <button 
+                onClick={() => setSelectedIds([])}
+                className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity px-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AssignTaskModal 
+        isOpen={!!assignTaskTarget}
+        onClose={() => setAssignTaskTarget(null)}
+        internIds={assignTaskTarget || []}
+        onSuccess={() => setSelectedIds([])}
+      />
     </div>
   );
 }
